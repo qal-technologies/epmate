@@ -6,7 +6,6 @@ const RatingScreen:React.FC = () => {
   return (
     <View style={styles.container}>
       <Text>Rate the helper</Text>
-      {/* Add rating component here */}
       <Button mode="contained">Submit</Button>
     </View>
   );
