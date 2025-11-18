@@ -1,12 +1,18 @@
-import { DefaultTheme } from 'react-native-paper';
-
 export const theme = {
-  ...DefaultTheme,
   colors: {
-    ...DefaultTheme.colors,
-    primary: '#00B14F', // A green color inspired by the logo
-    accent: '#FFFFFF',
-    background: '#FFFFFF',
-    text: '#000000',
+    primary: '#00D09C', // A green color similar to Bolt's
+    secondary: '#FFFFFF',
+    background: '#F6F6F6',
+    text: '#333333',
+    placeholder: '#BDBDBD',
+  },
+  fonts: {
+    regular: 'Agrandir-Regular', // Placeholder for Agrandir font
+    bold: 'Agrandir-Bold',
+  },
+  spacing: {
+    small: 8,
+    medium: 16,
+    large: 24,
   },
 };
