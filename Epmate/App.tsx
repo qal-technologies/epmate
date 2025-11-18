@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { PaperProvider } from 'react-native-paper';
@@ -7,6 +7,8 @@ import { store } from './src/state/store';
 import { theme } from './src/theme/theme';
 import AuthNavigator from './src/navigation/AuthNavigator';
 import AppNavigator from './src/navigation/AppNavigator';
+import { useLocationPermission } from './src/hooks/useLocationPermission';
+import LocationPermissionModal from './src/screens/main/LocationPermissionModal';
 
 const Stack = createNativeStackNavigator();
 
@@ -20,6 +22,14 @@ const App = () => {
 
 const Root = () => {
   const { isLoggedIn } = useSelector((state) => state.auth);
+  const locationPermissionGranted = useLocationPermission();
+  const [isModalVisible, setIsModalVisible] = useState(false);
+
+  useEffect(() => {
+    if (isLoggedIn && !locationPermissionGranted) {
+      setIsModalVisible(true);
+    }
+  }, [isLoggedIn, locationPermissionGranted]);
 
   return (
     <PaperProvider theme={theme}>
@@ -32,8 +42,12 @@ const Root = () => {
           )}
         </Stack.Navigator>
       </NavigationContainer>
+      <LocationPermissionModal
+        visible={isModalVisible}
+        onDismiss={() => setIsModalVisible(false)}
+      />
     </PaperProvider>
   );
-}
+};
 
 export default App;

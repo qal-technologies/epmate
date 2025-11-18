@@ -1,7 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { DrawerContentScrollView, DrawerItemList } from '@react-navigation/drawer';
-import { Avatar } from 'react-native-paper';
+import { Avatar, Divider, IconButton } from 'react-native-paper';
+import { useSelector } from 'react-redux';
+import { useUserRating } from '../hooks/useUserRating';
+
+const CustomDrawerContent = (props) => {
+  const [isHelperBoxVisible, setIsHelperBoxVisible] = useState(true);
+  const { rating, isLoading, isError } = useUserRating();
+  const { user } = useSelector((state) => state.auth);
+
 
 const CustomDrawerContent = (props) => {
   return (
