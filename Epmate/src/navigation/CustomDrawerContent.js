@@ -10,33 +10,15 @@ const CustomDrawerContent = (props) => {
   const { rating, isLoading, isError } = useUserRating();
   const { user } = useSelector((state) => state.auth);
 
+
+const CustomDrawerContent = (props) => {
   return (
     <DrawerContentScrollView {...props}>
       <View style={styles.userInfoSection}>
         <Avatar.Icon size={50} icon="account" />
-        <View style={styles.userInfoText}>
-          <Text style={styles.userName}>{user?.name || 'Guest'}</Text>
-          <Text>My Account</Text>
-        </View>
+        <Text style={styles.userName}>John Doe</Text>
       </View>
-      <View style={styles.ratingSection}>
-        {isLoading && <Text>Loading rating...</Text>}
-        {isError && <Text>Error fetching rating</Text>}
-        {rating && <Text>⭐ {rating.toFixed(2)} Rating</Text>}
-      </View>
-      <Divider />
       <DrawerItemList {...props} />
-      {isHelperBoxVisible && (
-        <View style={styles.helperBox}>
-          <Text style={styles.helperBoxTitle}>Become a helper</Text>
-          <IconButton
-            icon="close"
-            size={20}
-            onPress={() => setIsHelperBoxVisible(false)}
-            style={styles.closeButton}
-          />
-        </View>
-      )}
     </DrawerContentScrollView>
   );
 };
@@ -45,33 +27,10 @@ const styles = StyleSheet.create({
   userInfoSection: {
     paddingLeft: 20,
     marginBottom: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  userInfoText: {
-    marginLeft: 15,
   },
   userName: {
+    marginTop: 10,
     fontWeight: 'bold',
-  },
-  ratingSection: {
-    paddingLeft: 20,
-    marginBottom: 10,
-  },
-  helperBox: {
-    backgroundColor: '#f0f0f0',
-    padding: 20,
-    margin: 20,
-    borderRadius: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  helperBoxTitle: {
-    fontWeight: 'bold',
-  },
-  closeButton: {
-    margin: 0,
   },
 });
 
