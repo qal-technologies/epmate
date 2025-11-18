@@ -10,6 +10,8 @@ import TaskCompletionScreen from '../screens/main/TaskCompletionScreen';
 import RatingScreen from '../screens/main/RatingScreen';
 import IssueScreen from '../screens/main/IssueScreen';
 import PaymentScreen from '../screens/main/PaymentScreen';
+import MyTasksScreen from '../screens/main/MyTasksScreen';
+import SafetyScreen from '../screens/main/SafetyScreen';
 import CustomDrawerContent from './CustomDrawerContent';
 
 const Tab = createBottomTabNavigator();
@@ -49,6 +51,9 @@ const AppNavigator = () => {
   return (
     <Drawer.Navigator drawerContent={(props) => <CustomDrawerContent {...props} />}>
       <Drawer.Screen name="Main" component={MainTabs} />
+      <Drawer.Screen name="Payment" component={PaymentScreen} />
+      <Drawer.Screen name="My Tasks" component={MyTasksScreen} />
+      <Drawer.Screen name="Safety" component={SafetyScreen} />
       {/* Add other drawer screens here */}
     </Drawer.Navigator>
   );
