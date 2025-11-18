@@ -1,14 +1,5 @@
 {
   "name": "Epmate",
   "displayName": "Epmate",
-  "expo": {
-    "name": "Epmate",
-    "slug": "Epmate",
-    "plugins": [
-      "expo-dev-client"
-    ],
-    "android": {
-      "package": "com.epmate"
-    }
-  }
+  "description": ""
 }

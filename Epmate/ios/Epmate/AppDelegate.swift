@@ -25,13 +25,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     window = UIWindow(frame: UIScreen.main.bounds)
 
     FirebaseApp.configure()
-    
+
     factory.startReactNative(
       withModuleName: "Epmate",
       in: window,
       launchOptions: launchOptions
     )
-
 
     return true
   }

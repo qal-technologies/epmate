@@ -11,7 +11,6 @@ const CustomDrawerContent = (props) => {
   const { user } = useSelector((state) => state.auth);
 
 
-const CustomDrawerContent = (props) => {
   return (
     <DrawerContentScrollView {...props}>
       <View style={styles.userInfoSection}>

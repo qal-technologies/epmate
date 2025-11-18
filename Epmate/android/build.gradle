@@ -10,14 +10,12 @@ buildscript {
     repositories {
         google()
         mavenCentral()
-        maven { url 'https://www.jitpack.io' }
     }
     dependencies {
         classpath("com.android.tools.build:gradle")
         classpath("com.facebook.react:react-native-gradle-plugin")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
-        classpath 'com.google.gms:google-services:4.3.15'
-        classpath('com.github.expo:expo:v54.0.0')
+        classpath ('com.google.gms:google-services:4.3.15')
     }
 }
 
