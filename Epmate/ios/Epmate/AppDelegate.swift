@@ -1,4 +1,5 @@
 import UIKit
+import FirebaseCore
 import React
 import React_RCTAppDelegate
 import ReactAppDependencyProvider
@@ -23,11 +24,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     window = UIWindow(frame: UIScreen.main.bounds)
 
+    FirebaseApp.configure()
+    
     factory.startReactNative(
       withModuleName: "Epmate",
       in: window,
       launchOptions: launchOptions
     )
+
 
     return true
   }

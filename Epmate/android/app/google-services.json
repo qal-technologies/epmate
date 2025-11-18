@@ -1,14 +1,13 @@
 {
   "project_info": {
-    "project_number": "1234567890",
-    "firebase_url": "https://epmate.firebaseio.com",
-    "project_id": "epmate",
-    "storage_bucket": "epmate.appspot.com"
+    "project_number": "1045005823140",
+    "project_id": "epmate-app",
+    "storage_bucket": "epmate-app.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1234567890:android:abcdef1234567890",
+        "mobilesdk_app_id": "1:1045005823140:android:a509e91507f2b907deca31",
         "android_client_info": {
           "package_name": "com.epmate"
         }
@@ -16,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "YOUR_API_KEY_HERE"
+          "current_key": "AIzaSyBFCDvYv4PEcC3jeIXptlTkdHMBjJ0Eiu0"
         }
       ],
       "services": {
