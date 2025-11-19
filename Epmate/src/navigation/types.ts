@@ -7,6 +7,9 @@ export type HomeStackParamList = {
   Rating: undefined;
   Issue: undefined;
   Payment: undefined;
+  ConfirmOrder: undefined;
+  CompletePayment: undefined;
+  ProcessingPayment: undefined;
 };
 
 export type MainTabParamList = {
@@ -22,12 +25,13 @@ export type DrawerParamList = {
 };
 
 export type AuthStackParamList = {
-  Splash: undefined;
   Login: undefined;
   Signup: undefined;
   Terms: undefined;
   Policy: undefined;
   Role: { userId?: string } | undefined;
+  userName: { userId?: string } | undefined;
+  forgotPassword: { userId?: string } | undefined;
 };
 
 export type RootStackParamList = AuthStackParamList & {

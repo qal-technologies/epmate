@@ -1,22 +1,23 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { TextInput, Button, Provider } from 'react-native-paper';
+import { TextInput, Provider, Text } from 'react-native-paper';
 import SearchingHelpersModal from './SearchingHelpersModal';
 import HelperListModal from './HelperListModal';
+import AuthBtn from '../../components/AuthButton';
+import { theme } from '../../theme/theme';
 
 interface Props {
   setIsSearching: (state: any) => void;
+  setIsHelperListVisible: (state: any) => void;
   userId: string;
-  isSearching: boolean;
 }
 const PickupDelivery: React.FC<Props> = ({
   setIsSearching,
-  isSearching,
+  setIsHelperListVisible,
   userId,
 }) => {
   const [pickupLocation, setPickupLocation] = useState('');
   const [deliveryLocation, setDeliveryLocation] = useState('');
-  const [isHelperListVisible, setIsHelperListVisible] = useState(false);
 
   const isButtonEnabled = pickupLocation !== '' && deliveryLocation !== '';
 
@@ -42,35 +43,45 @@ const PickupDelivery: React.FC<Props> = ({
     }, 1000);
   };
 
-  const hideHelperList = () => setIsHelperListVisible(false);
-
   return (
     <Provider>
       <View style={styles.container}>
+        <Text
+          style={{
+            fontSize: theme.sizes.xl,
+            color: theme.colors.primary,
+            marginBottom: 20,
+          }}
+        >
+          Enter Locations
+        </Text>
         <TextInput
           label="Pickup Location"
           value={pickupLocation}
           onChangeText={setPickupLocation}
           style={styles.input}
+          placeholder="Your current location or address"
         />
         <TextInput
           label="Delivery Location"
           value={deliveryLocation}
           onChangeText={setDeliveryLocation}
           style={styles.input}
+          placeholder="Enter delivery location"
         />
-        <Button
-          mode="contained"
+
+        <AuthBtn
           disabled={!isButtonEnabled}
-          onPress={findHelper}
-        >
-          Find Helper
-        </Button>
-        <SearchingHelpersModal visible={isSearching} />
-        <HelperListModal
-          visible={isHelperListVisible}
-          onDismiss={hideHelperList}
+          onClick={findHelper}
+          btnMode="contained"
+          btnStyle="solid"
+          btnText="Find Helper"
+          mv
+          rounded
         />
+        <Text style={styles.shadow}>
+          You can provide more instructions to your helper later
+        </Text>
       </View>
     </Provider>
   );
@@ -83,6 +94,13 @@ const styles = StyleSheet.create({
   },
   input: {
     marginBottom: 10,
+  },
+  shadow: {
+    color: 'grey',
+    opacity: 0.9,
+    marginTop: 4,
+    fontSize: 14,
+    textAlign: 'center',
   },
 });
 

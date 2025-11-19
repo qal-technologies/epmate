@@ -8,26 +8,29 @@ import DraggableModal from './DraggableModal';
 import ServiceSelectionModal from './ServiceSelectionModal';
 import { IconButton } from 'react-native-paper';
 import { MaterialIcons } from '@expo/vector-icons';
-import { RESULTS } from 'react-native-permissions';
-import LocationPermissionModal from './LocationPermissionModal';
+import { useSelector } from 'react-redux';
+import SearchingHelpersModal from './SearchingHelpersModal';
+import HelperListModal from './HelperListModal';
 
 interface Props {
   userId?: string | null;
-  isSearching: boolean;
 }
 
-const HomeScreen: React.FC<Props> = ({ userId, isSearching }) => {
+const HomeScreen: React.FC<Props> = ({ userId }) => {
   const navigation = useNavigation<any>();
   const mapRef = useRef<MapView>(null);
-  const [location, hideLocation] = useState(!RESULTS.GRANTED || false);
+  const storedUserId = useSelector((state: any) => state.auth.user?.id);
+  const [isHelperListVisible, setIsHelperListVisible] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
 
   // Check userId on mount
   useEffect(() => {
-    if (!userId) {
+    const idToUse = userId || storedUserId;
+    if (!idToUse) {
       Alert.alert('Unauthorized', 'Please login first.');
       navigation.replace('Login');
     }
-  }, [userId, navigation]);
+  }, [userId, storedUserId, navigation]);
 
   // Animate map if searching
   useEffect(() => {
@@ -43,6 +46,7 @@ const HomeScreen: React.FC<Props> = ({ userId, isSearching }) => {
       );
     }
   }, [isSearching]);
+  const hideHelperList = () => setIsHelperListVisible(false);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -66,12 +70,16 @@ const HomeScreen: React.FC<Props> = ({ userId, isSearching }) => {
         <DraggableModal>
           <ServiceSelectionModal
             onSelectErrands={() =>
-              navigation.navigate('ErrandType', { userId, visible:true })
+              navigation.navigate('ErrandType', {
+                visible: true,
+              })
             }
           />
-          <LocationPermissionModal
-            onDismiss={() => hideLocation(true)}
-            visible={location}
+
+          <SearchingHelpersModal visible={isSearching} />
+          <HelperListModal
+            visible={isHelperListVisible}
+            onDismiss={hideHelperList}
           />
         </DraggableModal>
       </View>

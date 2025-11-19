@@ -11,6 +11,7 @@ import { db } from '../../utils/firebaseFirestore';
 import TPView from '../../components/T&PView';
 import Banner from '../../components/UpperBanner';
 import AuthBtn from '../../components/AuthButton';
+import { useNavigation } from '@react-navigation/native';
 
 type SignupScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -40,23 +41,39 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
 
       await db.collection('users').doc(uid).set({
         email: userEmail,
-        role: 'user',
       });
 
-      dispatch(login({ uid, email: userEmail }));
+      navigation.navigate('userName', { userId: uid }); 
     } catch (error: any) {
       console.error('Signup error:', error.message || error);
     }
   };
 
-  const handleGoogleSignup = () => {
-    dispatch(login({ uid: 'googleUser', email: 'google@example.com' }));
+  const handleGoogleSignup = async () => {
+    try {
+      const userCredential = await firebaseAuth.signInWithGoogle();
+      const uid = userCredential.user?.uid;
+      const displayName = userCredential.user?.displayName;
+      const userEmail = userCredential.user?.email;
+
+      if (!uid || !userEmail || !displayName) return;
+
+      await db.collection('users').doc(uid).set({
+        email: userEmail,
+        name: displayName,
+      });
+
+      localStorage.setItem('userName', displayName);
+      dispatch(login({ uid, email: userEmail, displayName: displayName }));
+      navigation.navigate('Role', { userId: uid }); 
+    } catch (error: any) {
+      console.error('Google Signup error:', error.message || error);
+    }
   };
 
   return (
     <View style={styles.container}>
       <Banner />
-
       <Text style={styles.title}>Create an Account</Text>
       <Text style={[styles.sm, { color: 'black' }]}>
         We'll send you a verification code to your email.

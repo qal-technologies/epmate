@@ -18,7 +18,9 @@ import { HomeStackParamList, MainTabParamList, DrawerParamList } from './types';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MaterialIcons } from '@expo/vector-icons';
 import ErrandsDeliveryModal from '../screens/main/ErrandsDeliveryModal';
-
+import ConfirmOrderScreen from '../screens/main/ConfirmOrderScreen';
+import ProcessingPaymentScreen from '../screens/main/ProcessingPaymentScreen';
+import CompletePaymentScreen from '../screens/main/CompletePaymentScreen';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const Stack = createNativeStackNavigator<HomeStackParamList>();
@@ -44,11 +46,33 @@ const HomeStack: React.FC = () => {
       </Stack.Screen>
 
       <Stack.Screen name="ErrandType">
-        {(
-          props: NativeStackScreenProps<HomeStackParamList, 'ErrandType'>,
-        ) => (
-          <ErrandsDeliveryModal {...(props as any)} setIsSearching={setIsSearching} />
+        {(props: NativeStackScreenProps<HomeStackParamList, 'ErrandType'>) => (
+          <ErrandsDeliveryModal
+            {...(props as any)}
+            setIsSearching={setIsSearching}
+          />
         )}
+      </Stack.Screen>
+
+      <Stack.Screen name="ConfirmOrder">
+        {(
+          props: NativeStackScreenProps<HomeStackParamList, 'ConfirmOrder'>,
+        ) => <ConfirmOrderScreen {...(props as any)} />}
+      </Stack.Screen>
+
+      <Stack.Screen name="ProcessingPayment">
+        {(
+          props: NativeStackScreenProps<
+            HomeStackParamList,
+            'ProcessingPayment'
+          >,
+        ) => <ProcessingPaymentScreen {...(props as any)} />}
+      </Stack.Screen>
+
+      <Stack.Screen name="CompletePayment">
+        {(
+          props: NativeStackScreenProps<HomeStackParamList, 'CompletePayment'>,
+        ) => <CompletePaymentScreen {...(props as any)} />}
       </Stack.Screen>
 
       <Stack.Screen

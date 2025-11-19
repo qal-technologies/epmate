@@ -4,7 +4,6 @@ import {
 import React, { useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Button, RadioButton } from 'react-native-paper';
-import { theme } from '../../theme/theme';
 import type { IconProps } from 'react-native-paper/lib/typescript/components/MaterialCommunityIcon';
 
 const services: { name: string; icon: IconProps | string }[] = [

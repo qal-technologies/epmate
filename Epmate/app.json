@@ -1,5 +1,15 @@
 {
   "name": "Epmate",
   "displayName": "Epmate",
-  "description": ""
+  "description": "",
+  "ios": {
+    "infoPlist": {
+      "NSUserNotificationUsageDescription": "We use notifications to update your task status and payment alerts."
+    }
+  },
+  "android": {
+    "permissions": [
+      "NOTIFICATION_SERVICE"
+    ]
+  }
 }

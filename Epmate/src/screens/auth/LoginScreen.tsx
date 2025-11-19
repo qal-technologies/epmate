@@ -27,8 +27,8 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
   const handleLogin = async () => {
     try {
-      await firebaseAuth.signInWithEmail(email, password);
-      dispatch(login({ uid: '12345', email: email }));
+      const userCred = await firebaseAuth.signInWithEmail(email, password);
+      dispatch(login({ uid: userCred.user?.uid, email: email }));
     } catch (error: any) {
       console.error('Login error:', error.message || error);
     }
@@ -84,8 +84,20 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
         btnStyle="border"
         icon="google"
       />
-      <Button onPress={() => navigation.navigate('Signup')}>
+      <Button
+        onPress={() => navigation.navigate('Signup')}
+        mode="text"
+        style={{ marginTop: 10 }}
+      >
         Already have an account? <Text style={styles.link}>Log in</Text>
+      </Button>
+
+      <Button
+        onPress={() => navigation.navigate('forgotPassword')}
+        mode="text"
+        style={{ marginTop: 10 }}
+      >
+        <Text style={styles.link}>Forgot Password</Text>
       </Button>
 
       <TPView navigation={navigation} />
@@ -132,6 +144,7 @@ const styles = StyleSheet.create({
     color: theme.colors.primary,
     textDecorationColor: theme.colors.primary,
     textDecorationLine: 'underline',
+    fontWeight: 'bold',
   },
 });
 

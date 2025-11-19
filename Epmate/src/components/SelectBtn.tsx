@@ -2,16 +2,16 @@ import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text, TouchableRipple } from 'react-native-paper';
-import type { IconProps } from 'react-native-paper/lib/typescript/components/MaterialCommunityIcon';
 import { theme } from '../theme/theme';
 
 type RadioProps = {
   selected: boolean;
   value: any;
   setSelected: (state?: any) => void;
-  icon?: IconProps;
+  icon?: 'location-pin' | 'handshake' | string;
   title?: string;
   description: string;
+  mv?: boolean;
 };
 
 const RadioBtn: React.FC<RadioProps> = ({
@@ -21,8 +21,8 @@ const RadioBtn: React.FC<RadioProps> = ({
   icon,
   title,
   description,
+  mv = true,
 }) => {
-    
   return (
     <TouchableRipple
       onPress={() => setSelected(value)}
@@ -34,12 +34,14 @@ const RadioBtn: React.FC<RadioProps> = ({
           backgroundColor: selected
             ? theme.colors.primaryTrans
             : theme.colors.secondary,
+          marginVertical: mv ? 10 : 0,
+          width: '90%',
         },
       ]}
     >
       {icon && (
         <View style={styles.iconView}>
-          <MaterialCommunityIcons name={icon} />
+          <MaterialIcons name={icon} />
         </View>
       )}
       <View

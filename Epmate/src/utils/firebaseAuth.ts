@@ -4,10 +4,6 @@ import auth, { FirebaseAuthTypes} from '@react-native-firebase/auth';
 import {
   getAuth,
   onAuthStateChanged,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  sendPasswordResetEmail,
-  signOut,
 } from 'firebase/auth';
 import {
   GoogleSignin,
@@ -67,7 +63,12 @@ const firebaseAuth = {
   },
 
   sendPasswordResetEmail: async (email: string): Promise<void> => {
-    return auth().sendPasswordResetEmail(email);
+    const extraDetails = {
+      url: 'https://www.epmate.com/forgotPassword?type=reset',
+      indoors: true,
+      dynamicLinkDomain: 'epmate.com',
+    }
+    return auth().sendPasswordResetEmail(email, {handleCodeInApp: true, ...extraDetails});
   },
 
   signOut: async (): Promise<void> => {

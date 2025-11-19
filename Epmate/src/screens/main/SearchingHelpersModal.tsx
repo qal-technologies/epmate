@@ -1,8 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { Modal, Portal } from 'react-native-paper';
+import { theme } from '../../theme/theme';
 
-const SearchingHelpersModal = ({ visible }: {visible:boolean}) => {
+const SearchingHelpersModal = ({ visible }: { visible: boolean }) => {
   const progress = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -27,7 +28,9 @@ const SearchingHelpersModal = ({ visible }: {visible:boolean}) => {
       <Modal visible={visible} contentContainerStyle={styles.modal}>
         <Text style={styles.text}>Searching for nearby helpers...</Text>
         <View style={styles.progressBar}>
-          <Animated.View style={[styles.progress, { width }]} />
+          <Animated.View
+            style={[styles.progress, { width, borderRadius: 50 }]}
+          />
         </View>
       </Modal>
     </Portal>
@@ -48,12 +51,12 @@ const styles = StyleSheet.create({
   progressBar: {
     height: 10,
     width: '100%',
-    backgroundColor: '#f0f0f0',
-    borderRadius: 5,
+    backgroundColor: theme.colors.primaryTrans,
+    borderRadius: 50,
   },
   progress: {
     height: '100%',
-    backgroundColor: '#00D09C',
+    backgroundColor: theme.colors.primary,
     borderRadius: 5,
   },
 });

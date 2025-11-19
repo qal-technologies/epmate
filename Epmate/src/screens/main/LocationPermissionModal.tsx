@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Modal, Portal, Button } from 'react-native-paper';
 import { request, PERMISSIONS } from 'react-native-permissions';
 import { Platform } from 'react-native';
+import { theme } from '../../theme/theme';
 
 interface Props{
   visible: boolean;
@@ -22,14 +23,14 @@ const LocationPermissionModal: React.FC<Props> = ({ visible, onDismiss }) => {
 
   return (
     <Portal>
-      <Modal visible={visible} onDismiss={onDismiss} contentContainerStyle={styles.modal}>
+      <Modal visible={visible} onDismiss={onDismiss} contentContainerStyle={styles.modal} >
         <Text style={styles.title}>Location Permission</Text>
         <Text style={styles.message}>
           We need your location to find helpers near you.
         </Text>
         <View style={styles.buttonContainer}>
-          <Button onPress={onDismiss}>Deny</Button>
-          <Button onPress={requestLocationPermission}>Allow</Button>
+          <Button onPress={requestLocationPermission} mode='contained' buttonColor={theme.colors.primary}>Allow</Button>
+          <Button onPress={onDismiss} mode='outlined'>Maybe later</Button>
         </View>
       </Modal>
     </Portal>

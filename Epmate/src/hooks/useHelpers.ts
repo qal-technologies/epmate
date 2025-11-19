@@ -5,8 +5,13 @@ const fetcher = (url: string): Promise<any> =>
 
 // Define expected response type
 export interface HelperData {
+  image: string;
   id: string;
   name: string;
+  tagPrice: number;
+  totalTask: number;
+  rating: number;
+  distance: number;
   [key: string]: any;
 }
 

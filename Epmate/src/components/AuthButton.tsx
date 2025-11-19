@@ -1,6 +1,12 @@
 import React from 'react';
-import { Text, Button, type ButtonProps } from 'react-native-paper';
+import {
+  Text,
+  Button,
+  type ButtonProps,
+  ActivityIndicator,
+} from 'react-native-paper';
 import { theme } from '../theme/theme';
+import type { StyleProps } from 'react-native-reanimated';
 
 type Props = {
   btnText: string;
@@ -8,10 +14,12 @@ type Props = {
   btnStyle: 'solid' | 'border';
   rounded?: boolean;
   onClick: () => void;
-  style?: ButtonProps;
+  style?: StyleProps | {};
   mv?: boolean;
   icon?: string;
   disabled?: boolean;
+  loading?: boolean;
+  loadingText?: string;
 };
 const AuthBtn: React.FC<Props> = ({
   btnText,
@@ -23,15 +31,26 @@ const AuthBtn: React.FC<Props> = ({
   mv,
   icon,
   disabled,
+  loading,
+  loadingText,
 }) => {
   const textColor = {
-    solid: theme.colors.secondary,
-    border: theme.colors.primary,
+    solid: disabled || loading ? '#454545' : theme.colors.secondary,
+    border: disabled || loading ? '#454545' : theme.colors.primary,
   };
 
   const btnColor = {
-    border: theme.colors.secondary,
-    solid: theme.colors.primary,
+    border: disabled || loading ? '#c9c9c9' : theme.colors.secondary,
+    solid: disabled || loading ? '#c9c9c9' : theme.colors.primary,
+  };
+
+  const border = {
+    border: {
+      borderColor: disabled || loading ? '#c9c9c9' : theme.colors.primary,
+    },
+    solid: {
+      borderColor: 'transparent',
+    },
   };
 
   return (
@@ -40,19 +59,30 @@ const AuthBtn: React.FC<Props> = ({
       textColor={textColor[btnStyle]}
       buttonColor={btnColor[btnStyle]}
       style={[
-        { borderRadius: rounded ? 50 : 10, marginVertical: mv ? 16 : 0 },
+        {
+          borderRadius: rounded ? 50 : 10,
+          marginVertical: mv ? 16 : 0,
+          width: '90%',
+          maxWidth: 350,
+          borderWidth: 1,
+          borderStyle: 'solid',
+          borderColor: border[btnStyle].borderColor,
+        },
+
         disabled && {
-          backgroundColor: 'grey',
-          borderColor: 'black',
           cursor: 'auto',
         },
         { ...style },
       ]}
       onPress={onClick}
       icon={icon}
-      disabled={disabled}
+      disabled={loading || disabled}
     >
-      {btnText}
+      {!loading
+        ? btnText
+        : loadingText || (
+            <ActivityIndicator size={'small'} color={textColor[btnStyle]} />
+          )}
     </Button>
   );
 };

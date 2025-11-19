@@ -1,11 +1,11 @@
 import React from 'react';
 import { Text } from 'react-native-paper';
-import { Image, View, StyleSheet } from 'react-native';
+import { Image, View, StyleSheet, Dimensions } from 'react-native';
 import { theme } from '../theme/theme';
 
 type Props = {
-    withText?:boolean
-}
+  withText?: boolean;
+};
 
 const Banner: React.FC<Props> = ({ withText = true }) => {
   return (
@@ -36,6 +36,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingBottom: 30,
     textAlign: 'center',
+    minHeight: Dimensions.get('screen').height / 3,
   },
   sub: {
     fontSize: 16,
