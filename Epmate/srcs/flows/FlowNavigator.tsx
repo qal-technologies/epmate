@@ -1,7 +1,12 @@
 import React from 'react';
-import { View, StyleSheet, Dimensions, Animated } from 'react-native';
+import { View, StyleSheet, Dimensions, ActivityIndicator, Modal } from 'react-native';
 import { flowRegistry } from './core/FlowRegistry';
 import { useFlow } from './core/FlowInstance';
+import Reanimated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
 
 import BottomSheet, {
   BottomSheetBackdrop,
@@ -11,8 +16,9 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { theme } from '../theme/theme';
 import { TouchableRipple, Text } from 'react-native-paper';
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
+// ... (helper functions and types remain the same)
 function sizeToSnapPoints(size?: string) {
   switch (size) {
     case 'full':
@@ -41,23 +47,6 @@ const FlowChildWrapper: React.FC<{
   return React.cloneElement(children as React.ReactElement<any>, { flow });
 };
 
-function useRafThrottledCallback(fn: (v: number) => void) {
-  const rafRef = React.useRef<number | null>(null);
-  const lastRef = React.useRef<number>(0);
-  return React.useCallback(
-    (v: number) => {
-      lastRef.current = v;
-      if (rafRef.current == null) {
-        rafRef.current = requestAnimationFrame(() => {
-          rafRef.current = null;
-          fn(lastRef.current);
-        });
-      }
-    },
-    [fn],
-  );
-}
-
 const OverlayPortal: React.FC<{ children: React.ReactNode }> = React.memo(
   ({ children }) => {
     return (
@@ -67,7 +56,6 @@ const OverlayPortal: React.FC<{ children: React.ReactNode }> = React.memo(
     );
   },
 );
-
 const FullScreenPageWrapper = React.memo(function FullScreenPageWrapper({
   parentId,
   childId,
@@ -81,31 +69,83 @@ const FullScreenPageWrapper = React.memo(function FullScreenPageWrapper({
   background?: string;
   runtime: ReturnType<typeof useFlow>;
 }) {
-  const opacity = React.useRef(new Animated.Value(0)).current;
-  React.useEffect(() => {
-    Animated.timing(opacity, {
-      toValue: 1,
-      duration: 200,
-      useNativeDriver: true,
-    }).start();
-    return () => {
-      Animated.timing(opacity, {
-        toValue: 0,
-        duration: 120,
-        useNativeDriver: true,
-      }).start();
-    };
-  }, []);
-
   const node = flowRegistry.getNode(childId);
   const childProps = node?.props || {};
-  const title = childProps.title ?? node?.name ?? '';
-  const noTitle = !!childProps.noTitle;
-  const canGoBack = childProps.canGoBack !== false;
+  const {
+    animationType = 'fade',
+    title,
+    noTitle,
+    canGoBack = true,
+    activityIndicator,
+  } = childProps;
 
+  const opacity = useSharedValue(0);
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
+
+  React.useEffect(() => {
+    runtime.onAnimationComplete(parentId, true);
+
+    switch (animationType) {
+      case 'slideBottom':
+        translateY.value = SCREEN_HEIGHT;
+        break;
+      case 'slideTop':
+        translateY.value = -SCREEN_HEIGHT;
+        break;
+      case 'slideLeft':
+        translateX.value = -SCREEN_WIDTH;
+        break;
+      case 'slideRight':
+        translateX.value = SCREEN_WIDTH;
+        break;
+      default:
+        opacity.value = 0;
+        break;
+    }
+
+    opacity.value = withSpring(1);
+    translateX.value = withSpring(0);
+    translateY.value = withSpring(0, {}, () => {
+      runtime.onAnimationComplete(parentId, false);
+    });
+
+    return () => {
+      runtime.onAnimationComplete(parentId, true);
+      switch (animationType) {
+        case 'slideBottom':
+          translateY.value = withSpring(SCREEN_HEIGHT);
+          break;
+        case 'slideTop':
+          translateY.value = withSpring(-SCREEN_HEIGHT);
+          break;
+        case 'slideLeft':
+          translateX.value = withSpring(-SCREEN_WIDTH);
+          break;
+        case 'slideRight':
+          translateX.value = withSpring(SCREEN_WIDTH);
+          break;
+        default:
+          opacity.value = withSpring(0);
+          break;
+      }
+      opacity.value = withSpring(0, {}, () => {
+        runtime.onAnimationComplete(parentId, false);
+      });
+    };
+  }, [parentId, runtime, animationType, opacity, translateX, translateY]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [
+      { translateX: translateX.value },
+      { translateY: translateY.value },
+    ],
+  }));
+
+  const { opening, switching } = runtime.getFlags(parentId);
   const siblings = parentId ? flowRegistry.getChildren(parentId) : [];
   const isFirstChild = siblings.length > 0 ? siblings[0].id === childId : false;
-
   const api = runtime;
 
   const page = (
@@ -120,12 +160,14 @@ const FullScreenPageWrapper = React.memo(function FullScreenPageWrapper({
       {content}
     </FlowChildWrapper>
   );
+
   return (
-    <Animated.View
+    <Reanimated.View
       pointerEvents="box-none"
       style={[
         styles.fullScreen,
-        { backgroundColor: background || '#fff', opacity },
+        { backgroundColor: background || '#fff' },
+        animatedStyle,
       ]}
     >
       {!noTitle && (
@@ -146,18 +188,22 @@ const FullScreenPageWrapper = React.memo(function FullScreenPageWrapper({
 
           <View style={styles.headerCenter}>
             <Text numberOfLines={1} style={styles.headerTitle}>
-              {title}
+              {title ?? node?.name ?? ''}
             </Text>
           </View>
         </View>
       )}
 
       {page}
-    </Animated.View>
+      {(opening || switching) && (
+        <View style={styles.activityIndicatorContainer}>
+          {activityIndicator || <ActivityIndicator size="large" />}
+        </View>
+      )}
+    </Reanimated.View>
   );
 });
 
-/* BottomSheet wrapper that uses gorhom */
 const ModalBottomSheetWrapper = React.memo(function ModalBottomSheetWrapper({
   parentId,
   childId,
@@ -185,15 +231,25 @@ const ModalBottomSheetWrapper = React.memo(function ModalBottomSheetWrapper({
   const title = childProps.title ?? node?.name ?? '';
   const noTitle = !!childProps.noTitle;
   const topElement: React.ReactNode | undefined = childProps.topElement;
-  const titleHeight = childProps.titleHeight ?? 56;
+  const { opening, switching } = runtime.getFlags(parentId);
+  const activityIndicator = childProps.activityIndicator;
 
   const normalizedSnapPoints = React.useMemo(() => {
-    const hasFull = snapPoints.some(s => String(s).includes('100%'));
     return snapPoints;
   }, [snapPoints]);
 
+  const onAnimate = React.useCallback(
+    (fromIndex: number, toIndex: number) => {
+      if (fromIndex !== toIndex) {
+        runtime.onAnimationComplete(parentId, true);
+      }
+    },
+    [parentId, runtime],
+  );
+
   const onChangeHandler = React.useCallback(
     (index: number) => {
+      runtime.onAnimationComplete(parentId, false);
       if (index === -1) {
         runtime.prev(parentId);
         return;
@@ -205,7 +261,7 @@ const ModalBottomSheetWrapper = React.memo(function ModalBottomSheetWrapper({
 
       runtime.onDragUpdate(parentId, percent);
     },
-    [parentId, runtime, snapPoints],
+    [parentId, runtime, normalizedSnapPoints],
   );
 
   const handlePresent = React.useCallback(() => {
@@ -276,6 +332,11 @@ const ModalBottomSheetWrapper = React.memo(function ModalBottomSheetWrapper({
           {content}
         </FlowChildWrapper>
       </View>
+      {(opening || switching) && (
+        <View style={styles.activityIndicatorContainer}>
+          {activityIndicator || <ActivityIndicator size="large" />}
+        </View>
+      )}
     </View>
   );
 
@@ -286,6 +347,7 @@ const ModalBottomSheetWrapper = React.memo(function ModalBottomSheetWrapper({
       index={0}
       snapPoints={snapPoints}
       onChange={onChangeHandler}
+      onAnimate={onAnimate}
       backgroundStyle={{ backgroundColor: background || '#fff' }}
       handleComponent={draggable ? undefined : null}
       enablePanDownToClose={dismissable}
@@ -297,34 +359,28 @@ const ModalBottomSheetWrapper = React.memo(function ModalBottomSheetWrapper({
   );
 });
 
-/* main renderer */
-const FlowRenderer: React.FC = () => {
+const FlowNavigator: React.FC = () => {
   const runtime = useFlow();
-  const [, tick] = React.useState(0);
+  const [activeList, setActiveList] = React.useState<any[]>([]);
+
   React.useEffect(() => {
-    let mounted = true;
-    const id = setInterval(() => {
-      if (!mounted) return;
-      tick(v => v + 1);
-    }, 700);
-    return () => {
-      mounted = false;
-      clearInterval(id);
+    const updateActiveFlows = () => {
+      const debug = flowRegistry.debugTree();
+      const parents = (debug.nodes || []).filter((n: any) => n.parentId === null);
+      const active = parents.map((p: any) => ({
+        parentNode: p,
+        activeNode: runtime.getActive(p.id),
+      }));
+      setActiveList(active);
     };
-  }, []);
 
-  const debug = flowRegistry.debugTree();
-  const parents = React.useMemo(
-    () => (debug.nodes || []).filter((n: any) => n.parentId === null),
-    [debug],
-  );
+    const unsubscribe = flowRegistry.subscribe(updateActiveFlows);
+    updateActiveFlows();
 
-  const activeList = React.useMemo(() => {
-    return parents.map((p: any) => ({
-      parentNode: p,
-      activeNode: runtime.getActive(p.id),
-    }));
-  }, [tick, parents, runtime]);
+    return () => {
+      unsubscribe();
+    };
+  }, [runtime]);
 
   if (!activeList.some(a => a.activeNode)) return null;
 
@@ -334,58 +390,66 @@ const FlowRenderer: React.FC = () => {
     const size = childProps.size || 'half';
     const draggable = !!childProps.draggable;
     const dismissable = childProps.dismissable !== false;
+    const coverScreen = !!childProps.coverScreen;
     const background =
       childProps.background ||
       (parentNode.props?.theme === 'dark' ? '#111' : '#fff');
 
+    let content;
     if (parentNode.type === 'modal') {
       const snapPoints = sizeToSnapPoints(size);
-      const isFull = snapPoints.some(s => String(s).includes('100%'));
-      return (
-        <View
+      content = (
+        <ModalBottomSheetWrapper
           key={activeNode.id}
-          pointerEvents={isFull ? 'auto' : 'box-none'}
-          style={styles.overlaySlot}
-        >
-          <ModalBottomSheetWrapper
-            key={activeNode.id}
-            parentId={parentNode.id}
-            childId={activeNode.id}
-            snapPoints={snapPoints}
-            draggable={draggable}
-            dismissable={dismissable}
-            background={background}
-            content={activeNode.props?.page ?? null}
-            runtime={runtime}
-          />
-        </View>
+          parentId={parentNode.id}
+          childId={activeNode.id}
+          snapPoints={snapPoints}
+          draggable={draggable}
+          dismissable={dismissable}
+          background={background}
+          content={activeNode.props?.page ?? null}
+          runtime={runtime}
+        />
       );
     } else {
-      return (
-        <View
+      content = (
+        <FullScreenPageWrapper
           key={activeNode.id}
-          pointerEvents="auto"
-          style={styles.overlaySlot}
-        >
-          <FullScreenPageWrapper
-            key={activeNode.id}
-            parentId={parentNode.id}
-            childId={activeNode.id}
-            content={activeNode.props?.page ?? null}
-            background={background}
-            runtime={runtime}
-          />
-        </View>
+          parentId={parentNode.id}
+          childId={activeNode.id}
+          content={activeNode.props?.page ?? null}
+          background={background}
+          runtime={runtime}
+        />
       );
     }
+
+    if (coverScreen) {
+      return (
+        <Modal
+          key={activeNode.id}
+          transparent
+          visible
+          statusBarTranslucent
+          animationType="none"
+        >
+          {content}
+        </Modal>
+      );
+    }
+
+    return (
+      <View key={activeNode.id} pointerEvents="auto" style={styles.overlaySlot}>
+        {content}
+      </View>
+    );
   });
 
   return <OverlayPortal>{rendered}</OverlayPortal>;
 };
 
-export default React.memo(FlowRenderer);
+export default FlowNavigator;
 
-/* styles */
 const styles = StyleSheet.create({
   overlayContainer: {
     position: 'absolute',
@@ -434,4 +498,14 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
   },
   pageContent: { flex: 1 },
+  activityIndicatorContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.2)',
+  },
 });
