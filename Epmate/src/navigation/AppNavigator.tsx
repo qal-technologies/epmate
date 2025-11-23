@@ -24,6 +24,8 @@ import SearchingHelpersModal from '../screens/main/services/utils/SearchingHelpe
 import HelperListModal from '../screens/main/services/utils/HelperListModal';
 import ServiceSelectionModal from '../screens/main/ServiceSelectionModal';
 import { theme } from 'theme/theme';
+import FlowSampleScreen from '../screens/sample/FlowSampleScreen';
+import AdvancedFlowSample from '../screens/sample/AdvancedFlowSample';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const Stack = createNativeStackNavigator<HomeStackParamList>();
@@ -249,6 +251,24 @@ const AppNavigator: React.FC = () => {
         options={{
           drawerIcon: ({ color, size }) => (
             <MaterialIcons name="security" color={color} size={size} />
+          ),
+        }}
+      />
+       <Drawer.Screen
+        name="Flow Sample"
+        component={FlowSampleScreen as React.ComponentType<any>}
+        options={{
+          drawerIcon: ({ color, size }) => (
+            <MaterialIcons name="autorenew" color={color} size={size} />
+          ),
+        }}
+      />
+      <Drawer.Screen
+        name="Advanced Flow Sample"
+        component={AdvancedFlowSample as React.ComponentType<any>}
+        options={{
+          drawerIcon: ({ color, size }) => (
+            <MaterialIcons name="autorenew" color={color} size={size} />
           ),
         }}
       />

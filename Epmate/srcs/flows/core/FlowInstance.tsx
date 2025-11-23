@@ -99,7 +99,33 @@ async function runWithTimeout<T>(
   timeoutMs: number,
   fallback: T,
 ): Promise<T> {
-  // ... implementation unchanged
+  let finished = false;
+  return new Promise<T>(resolve => {
+    const t = setTimeout(() => {
+      if (!finished) {
+        finished = true;
+        resolve(fallback);
+      }
+    }, timeoutMs);
+
+    Promise.resolve()
+      .then(fn)
+      .then(res => {
+        if (!finished) {
+          finished = true;
+          clearTimeout(t);
+          resolve(res);
+        }
+      })
+      .catch(err => {
+        if (!finished) {
+          finished = true;
+          clearTimeout(t);
+          console.warn('[Flow] hook error', err);
+          resolve(fallback);
+        }
+      });
+  });
 }
 
 /* -------------------- Navigation primitives -------------------- */
@@ -118,15 +144,46 @@ function pushChildOntoStack(parentId: string, childId: string) {
 }
 
 function popChildFromStack(parentId: string) {
-  // ... implementation unchanged
+  ensureRuntime(parentId);
+  const arr = stackMap.get(parentId)!;
+  if (arr.length === 0) {
+    activeMap.set(parentId, null);
+    notify(parentId, 'stack:empty', null);
+    return null;
+  }
+  const popped = arr.pop()!;
+  stackMap.set(parentId, arr);
+
+  const top = arr[arr.length - 1] || null;
+  activeMap.set(parentId, top);
+
+  try {
+    flowRegistry.setCurrentChild(parentId, top);
+  } catch (_) {}
+
+  notify(parentId, 'stack:pop', { popped, top, stack: [...arr] });
+  return top;
 }
 
 function getCurrentActiveChildId(parentId: string): string | null {
-  // ... implementation unchanged
+  ensureRuntime(parentId);
+  const a = activeMap.get(parentId);
+  if (a) return a;
+  const children = flowRegistry.getChildren(parentId);
+  if (!children || children.length === 0) return null;
+  const first = children[0].id;
+  activeMap.set(parentId, first);
+  return first;
 }
 
 function inferParent(parentName?: string | null): string | null {
-  // ... implementation unchanged
+  if (parentName) return parentName;
+  const fromRegistry = flowRegistry.findTopParentWithActiveChild();
+  if (fromRegistry) return fromRegistry;
+  // fallback: pick first top-level node
+  const debug = flowRegistry.debugTree();
+  const top = (debug.nodes || []).find((n: any) => n.parentId === null);
+  return top ? top.id : null;
 }
 
 /* -------------------- Async lifecycle runner -------------------- */
@@ -135,7 +192,21 @@ async function runOnSwitching(
   direction: 'forward' | 'backward',
   timeoutMs: number,
 ) {
-  // ... implementation unchanged
+  try {
+    const cb = childNode.props?.onSwitching;
+    if (cb) {
+      const res = await runWithTimeout(
+        () => Promise.resolve(cb(direction)),
+        timeoutMs,
+        true,
+      );
+      return res !== false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('[Flow] onSwitching rejected or threw:', err);
+    return false;
+  }
 }
 
 async function runOnOpen(
@@ -143,7 +214,21 @@ async function runOnOpen(
   ctx: { from: string; opener?: string },
   timeoutMs: number,
 ) {
-  // ... implementation unchanged
+  try {
+    const cb = childNode.props?.onOpen;
+    if (cb) {
+      const res = await runWithTimeout(
+        () => Promise.resolve(cb(ctx)),
+        timeoutMs,
+        true,
+      );
+      return res !== false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('[Flow] onOpen rejected or threw:', err);
+    return false;
+  }
 }
 
 function ensureRuntime(parentId: string) {
@@ -158,7 +243,87 @@ function ensureRuntime(parentId: string) {
 
 /* ---------- AtEnd handler ---------- */
 async function handleAtEnd(parentNode: FlowNode, opts?: FlowCreateOptions) {
-  // ... implementation unchanged
+  const atEnd: AtEndConfig = parentNode.props?.atEnd;
+  const lifecycleTimeoutMs = opts?.lifecycleTimeoutMs ?? 8000;
+
+  if (!atEnd) {
+    notify(parentNode.id, 'atEnd:none', null);
+    return false;
+  }
+  let didSomething = false;
+
+  if (parentNode.props?.isRestrictedOut) {
+    notify(parentNode.id, 'atEnd:blocked:restrictedOut', null);
+    return false;
+  }
+
+  if (typeof atEnd.endWith === 'function') {
+    try {
+      const res = await Promise.resolve(
+        atEnd.endWith({ parentNode, flowRegistry, lifecycleTimeoutMs }),
+      );
+      if (res && res.dismount) {
+        cleanupAndUnregister(
+          parentNode.id,
+          !!atEnd.cleanUp,
+          !!atEnd.resetState,
+        );
+      }
+      return true;
+    } catch (err) {
+      console.warn('[Flow] atEnd function threw', err);
+      return false;
+    }
+  }
+
+  const mode = atEnd.endWith;
+  switch (mode) {
+    case 'parent': {
+      const pParentId = parentNode.parentId;
+      if (!pParentId) {
+        if (atEnd.cleanUp)
+          cleanupAndUnregister(parentNode.id, true, !!atEnd.resetState);
+        notify(parentNode.id, 'atEnd:no-parent', null);
+        return true;
+      }
+      notify(parentNode.id, 'atEnd:parent', { toParent: pParentId });
+      didSomething = true;
+
+      if (atEnd.cleanUp)
+        cleanupAndUnregister(parentNode.id, true, !!atEnd.resetState);
+      return true;
+    }
+    case 'self': {
+      const children = flowRegistry.getChildren(parentNode.id);
+      if (children && children.length > 0) {
+        stackMap.set(parentNode.id, []);
+        activeMap.set(parentNode.id, children[0].id);
+        notify(parentNode.id, 'atEnd:self:reset', { to: children[0].id });
+        if (atEnd.cleanUp)
+          cleanupAndUnregister(parentNode.id, true, !!atEnd.resetState);
+      }
+      return true;
+    }
+    case 'element': {
+      const el = atEnd.element;
+      if (!el) {
+        notify(parentNode.id, 'atEnd:element:missing', null);
+        if (atEnd.cleanUp)
+          cleanupAndUnregister(parentNode.id, true, !!atEnd.resetState);
+        return true;
+      }
+      notify(parentNode.id, 'atEnd:element', { element: el });
+      if (atEnd.cleanUp)
+        cleanupAndUnregister(parentNode.id, true, !!atEnd.resetState);
+      return true;
+    }
+    default: {
+      notify(parentNode.id, 'atEnd:unknown', { atEnd });
+      if (atEnd.cleanUp)
+        cleanupAndUnregister(parentNode.id, true, !!atEnd.resetState);
+      return didSomething;
+    }
+  }
 }
 
 function cleanupAndUnregister(
@@ -166,7 +331,24 @@ function cleanupAndUnregister(
   unregisterFlag: boolean,
   resetStateFlag: boolean,
 ) {
-  // ... implementation unchanged
+  stackMap.delete(parentId);
+  activeMap.delete(parentId);
+  openingMap.delete(parentId);
+  switchingMap.delete(parentId);
+  draggingMap.delete(parentId);
+  animationMap.delete(parentId);
+  listeners.delete(parentId);
+  if (resetStateFlag) {
+    stateMap.delete(parentId);
+  }
+
+  if (unregisterFlag) {
+    try {
+      flowRegistry.unregisterNode(parentId);
+    } catch (err) {
+      console.warn('[Flow] cleanup unregister error', err);
+    }
+  }
 }
 
 /* -------------------- Flow API implementation -------------------- */
@@ -178,8 +360,6 @@ export function useFlow() {
     const FlowNavigator: React.FC<{ children: React.ReactNode }> = ({
       children,
     }) => {
-      // The Navigator is now a simple container. The real rendering logic
-      // will be in the renamed FlowRenderer -> FlowNavigator.tsx
       return <>{children}</>;
     };
 
@@ -271,8 +451,15 @@ export function useFlow() {
     return Flow;
   }
 
-  // ... (navigation functions: open, close, next, prev, goTo remain the same)
-  // ... (getters and listeners: getActive, getFlags, onChange, etc. remain the same)
+  /**
+   * Opens a child within a flow.
+   *
+   * @param parentName The name of the parent flow.
+   * @param childName The name of the child to open.
+   * @param opener An optional string identifying the opener.
+   * @param opts Optional configuration for the open action.
+   * @returns A promise that resolves to true if the child was opened successfully, false otherwise.
+   */
   async function open(
     parentName: string,
     childName: string,
@@ -355,6 +542,12 @@ export function useFlow() {
     }
   }
 
+  /**
+   * Closes a flow.
+   *
+   * @param parentName The name of the parent flow to close.
+   * @returns A promise that resolves to true if the flow was closed successfully, false otherwise.
+   */
   async function close(parentName: string) {
     if (!parentName) return false;
     const parent = flowRegistry.getNode(parentName);
@@ -378,6 +571,13 @@ export function useFlow() {
     return true;
   }
 
+  /**
+   * Navigates to the next child in the flow.
+   *
+   * @param parentName The name of the parent flow.
+   * @param opts Optional configuration for the navigation.
+   * @returns A promise that resolves to true if the navigation was successful, false otherwise.
+   */
   async function next(
     parentName?: string | null,
     opts: FlowCreateOptions = { type: 'page' },
@@ -400,6 +600,9 @@ export function useFlow() {
     const children = flowRegistry.getChildren(parentName);
     if (!children || children.length === 0) {
       console.warn(`[Flow.next] parent "${parentName}" has no children.`);
+      if (parent.parentId) {
+        return next(parent.parentId, opts);
+      }
       return false;
     }
 
@@ -413,6 +616,9 @@ export function useFlow() {
     if (nextIdx >= children.length) {
       const handled = await handleAtEnd(parent, opts);
       if (handled) return true;
+      if (parent.parentId) {
+        return next(parent.parentId, opts);
+      }
       notify(parentName, 'next:at-end', null);
       return false;
     }
@@ -444,6 +650,13 @@ export function useFlow() {
     return true;
   }
 
+  /**
+   * Navigates to the previous child in the flow.
+   *
+   * @param parentName The name of the parent flow.
+   * @param opts Optional configuration for the navigation.
+   * @returns A promise that resolves to true if the navigation was successful, false otherwise.
+   */
   async function prev(
     parentName?: string | null,
     opts: FlowCreateOptions = { type: 'page' },
@@ -499,6 +712,13 @@ export function useFlow() {
     return true;
   }
 
+  /**
+   * Navigates to a specific child in the flow.
+   *
+   * @param parentName The name of the parent flow.
+   * @param pathSegments The path to the child to navigate to.
+   * @returns A promise that resolves to true if the navigation was successful, false otherwise.
+   */
   async function goTo(parentName: string, ...pathSegments: string[]) {
     if (!parentName) return false;
     if (!pathSegments || pathSegments.length === 0) {
@@ -564,6 +784,12 @@ export function useFlow() {
     return true;
   }
 
+  /**
+   * Gets the active child of a flow.
+   *
+   * @param parentName The name of the parent flow.
+   * @returns The active child node, or null if there is no active child.
+   */
   function getActive(parentName: string) {
     if (!parentName) return null;
     const activeId = getCurrentActiveChildId(parentName);
@@ -571,6 +797,12 @@ export function useFlow() {
     return safeGetNode(activeId);
   }
 
+  /**
+   * Gets the current flags for a flow.
+   *
+   * @param parentName The name of the parent flow.
+   * @returns An object with the current flags.
+   */
   function getFlags(parentName: string) {
     ensureRuntime(parentName);
     return {
@@ -581,6 +813,13 @@ export function useFlow() {
     };
   }
 
+  /**
+   * Subscribes to changes in a flow.
+   *
+   * @param parentName The name of the parent flow.
+   * @param cb The callback to call when the flow changes.
+   * @returns A function to unsubscribe from the changes.
+   */
   function onChange(parentName: string, cb: (...args: any[]) => void) {
     if (!parentName || typeof cb !== 'function') return () => {};
     const set = listeners.get(parentName) || new Set();
@@ -595,10 +834,22 @@ export function useFlow() {
     };
   }
 
+  /**
+   * Gets the parent of a child.
+   *
+   * @param childId The ID of the child.
+   * @returns The name of the parent flow, or null if there is no parent.
+   */
   function getMom(childId: string): string | null {
     return flowRegistry.getMom(childId) ?? null;
   }
 
+  /**
+   * Updates the drag state of a flow.
+   *
+   * @param parentName The name of the parent flow.
+   * @param pos The new drag position.
+   */
   function onDragUpdate(parentName: string, pos: number) {
     ensureRuntime(parentName);
     draggingMap.set(parentName, true);
@@ -614,18 +865,34 @@ export function useFlow() {
     notify(parentName, 'drag', { pos });
   }
 
+  /**
+   * Ends the drag state of a flow.
+   *
+   * @param parentName The name of the parent flow.
+   */
   function onDragEnd(parentName: string) {
     ensureRuntime(parentName);
     draggingMap.set(parentName, false);
     notify(parentName, 'drag:end', null);
   }
 
+  /**
+   * Notifies the flow that an animation has completed.
+   *
+   * @param parentName The name of the parent flow.
+   */
   function onAnimationComplete(parentName: string, animating: boolean) {
     ensureRuntime(parentName);
     animationMap.set(parentName, animating);
     notify(parentName, 'animation:complete', { animating });
   }
 
+  /**
+   * Gets the state of a flow.
+   *
+   * @param parentName The name of the parent flow.
+   * @returns The state of the flow.
+   */
   function getFlowState(parentName: string) {
     const inferredParent = inferParent(parentName);
     if (!inferredParent) {
@@ -636,6 +903,12 @@ export function useFlow() {
     return stateMap.get(inferredParent);
   }
 
+  /**
+   * Sets the state of a flow.
+   *
+   * @param parentName The name of the parent flow.
+   * @param newState The new state to set.
+   */
   function setFlowState(parentName: string, newState: any) {
     const inferredParent = inferParent(parentName);
     if (!inferredParent) {
