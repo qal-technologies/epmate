@@ -8,7 +8,7 @@ const SplashScreen: React.FC = () => {
     <View style={styles.container}>
       <Animated.Image
         entering={ZoomIn.springify()}
-        source={require('../assets/')}
+        source={require('../assets/images/logoName.png')}
         style={styles.logo}
       />
     </View>

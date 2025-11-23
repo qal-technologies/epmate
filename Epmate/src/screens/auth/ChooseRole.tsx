@@ -62,10 +62,8 @@ const RolePage: React.FC<Props> = ({}) => {
           <RadioBtn
             key={role.name}
             value={role.name}
-            title={role.title}
-            description={role.info}
+            description={role.title}
             setSelected={value => setUserRole(value)}
-            icon={role.icon}
             selected={role.name == userRole}
           />
         );

@@ -75,7 +75,7 @@ const RadioBtn: React.FC<RadioProps> = ({
         }}
       >
         {title && <Text style={styles.title}>{title}</Text>}
-        <Text style={!title ? styles.sub : styles.sm}>{description}</Text>
+        <Text style={!title ? styles.title : styles.sm}>{description}</Text>
       </View>
       {selected && (
         <Animated.View entering={FadeInRight} exiting={FadeOutRight}>

@@ -31,7 +31,7 @@ const Banner: React.FC<Props> = ({ withText = true }) => {
         ]}
       >
         <Image
-          source={require('../assets/images/logo.jpg')}
+          source={require('../assets/images/logoName.png')}
           style={styles.image}
         />
         {withText && (
@@ -66,12 +66,6 @@ const styles = StyleSheet.create({
     padding: 10,
     paddingTop:20,
     marginBottom: 15,
-    borderEndEndRadius: 60,
-    shadowColor: theme.colors.primaryTrans,
-    shadowRadius: 10,
-    shadowOffset: { width: 30, height: 10 },
-    shadowOpacity:.6,
-    borderStartEndRadius:60,
     textAlign: 'center',
     height:'40%',
     overflow: 'hidden',
@@ -82,7 +76,7 @@ const styles = StyleSheet.create({
     alignSelf:'center',
   },
   sub: {
-    fontSize: 25,
+    fontSize: 22,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 5,

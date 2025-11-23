@@ -17,12 +17,13 @@ const AuthNavigator: React.FC = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen
-        name="Login"
-        component={LoginScreen as React.ComponentType<any>}
-      />
-      <Stack.Screen
         name="Signup"
         component={SignupScreen as React.ComponentType<any>}
+      />
+      
+      <Stack.Screen
+        name="Login"
+        component={LoginScreen as React.ComponentType<any>}
       />
 
       <Stack.Screen
