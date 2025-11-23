@@ -7,8 +7,9 @@ import SignupScreen from '../screens/auth/SignupScreen';
 import { AuthStackParamList } from './types';
 import PolicyPage from '../screens/auth/Privacy';
 import TermsPage from '../screens/auth/Terms';
-import RolePage from '../screens/auth/RolePage';
+import RolePage from '../screens/auth/ChooseRole';
 import UserNameScreen from '../screens/auth/UserNameScreen';
+import ForgotPasswordScreen from 'screens/auth/ForgotPasswordScreen';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
@@ -44,7 +45,7 @@ const AuthNavigator: React.FC = () => {
 
        <Stack.Screen
         name="forgotPassword"
-        component={RolePage as React.ComponentType<any>}
+        component={ForgotPasswordScreen as React.ComponentType<any>}
       />
     </Stack.Navigator>
   );

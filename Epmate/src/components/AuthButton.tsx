@@ -64,9 +64,11 @@ const AuthBtn: React.FC<Props> = ({
           marginVertical: mv ? 16 : 0,
           width: '90%',
           maxWidth: 350,
+          padding:5,
           borderWidth: 1,
           borderStyle: 'solid',
           borderColor: border[btnStyle].borderColor,
+          alignSelf:'center'
         },
 
         disabled && {

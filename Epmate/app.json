@@ -1,15 +1,53 @@
 {
-  "name": "Epmate",
-  "displayName": "Epmate",
-  "description": "",
-  "ios": {
-    "infoPlist": {
-      "NSUserNotificationUsageDescription": "We use notifications to update your task status and payment alerts."
-    }
-  },
-  "android": {
-    "permissions": [
-      "NOTIFICATION_SERVICE"
+  "expo": {
+    "name": "Epmate",
+    "slug": "Epmate",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/logo.png",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#30AF70",
+    "description": "Epmate - Your Ultimate Emergency Companion App",
+    "splash": {
+      "image": "./assets/images/logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#30AF70",
+      "name": "Epmate"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/logo.png",
+        "backgroundColor": "#30AF70"
+      },
+      "package": "com.epmate"
+    },
+    "web": {
+      "favicon": "./assets/images/logoBold.jpg",
+      "themeColor": "#30AF70"
+    },
+    "plugins": [
+      [
+        "react-native-background-geolocation",
+        {
+          "ios": {
+            "locationAuthorizationRequest": "Always",
+            "allowsBackgroundLocationUpdates": true,
+            "pausesLocationUpdatesAutomatically": false
+          },
+          "android": {
+            "locationAuthorizationRequest": "Always",
+            "allowsBackgroundLocationUpdates": true,
+            "pausesLocationUpdatesAutomatically": false
+          }
+        }
+      ],
+      "expo-font"
     ]
   }
 }

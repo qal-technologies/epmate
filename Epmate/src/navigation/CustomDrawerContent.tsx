@@ -21,46 +21,72 @@ import { theme } from '../theme/theme';
 
 const CustomDrawerContent: React.FC<DrawerContentComponentProps> = props => {
   const [isHelperBoxVisible, setIsHelperBoxVisible] = useState(true);
-  const fadeAnim = new Animated.Value(1); 
+  const fadeAnim = new Animated.Value(1);
   const { rating, isLoading, isError } = useUserRating();
   const { user } = useSelector((state: any) => state.auth);
 
-  const userName = (user && (user.name || user.displayName || user.email)) ?? 'User';
+  const userName =
+    (user && (user.name || user.displayName || user.email)) ?? 'User';
 
   useEffect(() => {
     const loadHelperVisibility = async () => {
       const value = await AsyncStorage.getItem('helperButtonVisible');
-      if (value === 'false') setIsHelperBoxVisible(false);
+      // if (value === 'false') setIsHelperBoxVisible(false);
+      await AsyncStorage.setItem('helperButtonVisible', 'false');
     };
     loadHelperVisibility();
   }, []);
 
-    const removeHelperButton = async () => {
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }).start(() => setIsHelperBoxVisible(false));
-      await AsyncStorage.setItem('helperButtonVisible', 'false');
+  const removeHelperButton = async () => {
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start(() => setIsHelperBoxVisible(false));
+    await AsyncStorage.setItem('helperButtonVisible', 'false');
   };
-  
+
   const openHelperRegistration = () => {
     props.navigation.navigate('RegisterHelper');
   };
-  
+
   return (
     <DrawerContentScrollView {...props} contentContainerStyle={{ flex: 1 }}>
       <View style={styles.userInfoSection}>
-        <Avatar.Icon size={60} icon="account" />
-        <Text style={styles.userName}>{userName}</Text>
-        <Text style={styles.ratingText}>
-          <MaterialIcons
-            name={'star'}
-            color={theme.colors.background}
-            size={14}
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 15,
+            justifyContent: 'flex-start',
+          }}
+        >
+          <Avatar.Icon
+            size={60}
+            icon="account"
+            color={theme.colors.primary}
+            style={{ backgroundColor: theme.colors.primaryTrans }}
           />
-          {isLoading ? 'Loading rating...' : `${rating ?? '0.00'} Rating`}
-        </Text>
+          <View>
+            <Text style={styles.userName}>{userName}</Text>
+            <Text style={styles.myAccountText}>My Account</Text>
+          </View>
+        </View>
+
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            gap: 10,
+            marginTop: 10,
+          }}
+        >
+          <MaterialIcons name={'star'} color={theme.colors.primary} size={18} />
+          <Text style={styles.ratingText}>
+            {isLoading ? 'Loading rating...' : `${rating ?? '0.00'} Rating`}
+          </Text>
+        </View>
       </View>
 
       <Divider style={{ marginBottom: 20 }} />
@@ -73,26 +99,27 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = props => {
             opacity: fadeAnim,
             marginTop: 'auto',
             marginBottom: 20,
-            paddingHorizontal: 20,
           }}
         >
-          <View
+          <TouchableOpacity
+            onPress={openHelperRegistration}
             style={{
-              flexDirection: 'row',
               justifyContent: 'space-between',
-              alignItems: 'center',
+              alignItems: 'flex-start',
+              backgroundColor: theme.colors.primaryTrans,
+              padding: 12,
+              borderRadius: 15,
+              width: '100%',
+              display: 'flex',
+              flexDirection:'column',
             }}
           >
-            <TouchableOpacity
-              style={styles.helperButton}
-              onPress={openHelperRegistration}
-            >
-              <Text style={styles.helperButtonText}>Become a Helper</Text>
+            <Text style={styles.helperButtonTitle}>Become a Helper</Text>
+            <Text style={styles.helperButtonText}>Help others and earn money at your own schedule</Text>
+            <TouchableOpacity onPress={removeHelperButton} style={{position:'absolute', top:7, right:7}}>
+              <MaterialIcons name="close" size={20} color={theme.colors.placeholder} />
             </TouchableOpacity>
-            <TouchableOpacity onPress={removeHelperButton}>
-              <MaterialIcons name="close" size={24} color="gray" />
-            </TouchableOpacity>
-          </View>
+          </TouchableOpacity>
         </Animated.View>
       )}
     </DrawerContentScrollView>
@@ -109,6 +136,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 18,
   },
+  myAccountText: {
+    fontSize: 16,
+    color: theme.colors.primary,
+    textAlign: 'left',
+  },
   ratingText: {
     marginTop: 4,
     fontSize: 14,
@@ -116,14 +148,20 @@ const styles = StyleSheet.create({
   },
   helperButton: {
     flex: 1,
-    backgroundColor: '#00D09C',
+    backgroundColor: theme.colors.primary,
     paddingVertical: 12,
     paddingHorizontal: 15,
     borderRadius: 8,
   },
-  helperButtonText: {
-    color: 'white',
+  helperButtonTitle: {
+    fontSize: 18,
+    marginBottom:2,
     fontWeight: 'bold',
+  },
+  helperButtonText: {
+    color: theme.colors.primary,
+    fontWeight: 'light',
+    fontSize: 14.5,
   },
 });
 

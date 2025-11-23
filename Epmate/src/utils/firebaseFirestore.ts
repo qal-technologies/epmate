@@ -1,60 +1,52 @@
 // utils/firebase/firebaseFirestore.ts
-import firestore, {
-  FirebaseFirestoreTypes,
-} from '@react-native-firebase/firestore';
+import { getFirestore, collection, addDoc, doc, getDoc, updateDoc, deleteDoc, getDocs } from 'firebase/firestore';
+import { app } from './firebaseConfig';
 
-export const db = firestore();
+const db = getFirestore(app);
 
 type CollectionName = string;
-
-// Constrain T to Firestore-compatible data
-type FirestoreData = FirebaseFirestoreTypes.DocumentData;
+type FirestoreData = Record<string, any>;
 
 const firebaseFirestore = {
   addDocument: async <T extends FirestoreData>(
-    collection: CollectionName,
-    data: T,
-  ): Promise<FirebaseFirestoreTypes.DocumentReference<T>> => {
-    // Use .add(data) returns DocumentReference<DocumentData>
-    const docRef = await firestore().collection(collection).add(data);
-    // Cast to DocumentReference<T> is safe if data matches T
-    return docRef as FirebaseFirestoreTypes.DocumentReference<T>;
+    collectionName: CollectionName,
+    data: T
+  ): Promise<void> => {
+    await addDoc(collection(db, collectionName), data);
   },
 
   getDocument: async <T extends FirestoreData>(
-    collection: CollectionName,
-    docId: string,
+    collectionName: CollectionName,
+    docId: string
   ): Promise<T | null> => {
-    const doc = await firestore().collection(collection).doc(docId).get();
-    // doc.exists is a boolean, not a function, in this API
-    if (doc.exists() || doc.exists) {
-      return doc.data() as T;
-    } else {
-      return null;
-    }
+    const docRef = doc(db, collectionName, docId);
+    const docSnap = await getDoc(docRef);
+    return docSnap.exists() ? (docSnap.data() as T) : null;
   },
 
   updateDocument: async (
-    collection: CollectionName,
+    collectionName: CollectionName,
     docId: string,
-    data: Partial<FirestoreData>,
+    data: Partial<FirestoreData>
   ): Promise<void> => {
-    await firestore().collection(collection).doc(docId).update(data);
+    const docRef = doc(db, collectionName, docId);
+    await updateDoc(docRef, data);
   },
 
   deleteDocument: async (
-    collection: CollectionName,
-    docId: string,
+    collectionName: CollectionName,
+    docId: string
   ): Promise<void> => {
-    await firestore().collection(collection).doc(docId).delete();
+    const docRef = doc(db, collectionName, docId);
+    await deleteDoc(docRef);
   },
 
   getCollection: async <T extends FirestoreData>(
-    collection: CollectionName,
+    collectionName: CollectionName
   ): Promise<T[]> => {
-    const snapshot = await firestore().collection(collection).get();
-    return snapshot.docs.map(doc => doc.data() as T);
+    const querySnapshot = await getDocs(collection(db, collectionName));
+    return querySnapshot.docs.map(doc => doc.data() as T);
   },
 };
 
-export { firebaseFirestore };
+export { firebaseFirestore, db };

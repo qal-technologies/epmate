@@ -1,14 +1,15 @@
 // navigation/AppRootNavigator.tsx
 import React, { useEffect, useState } from 'react';
 import { View, ActivityIndicator } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
 import { useDispatch } from 'react-redux';
 import AuthNavigator from './AuthNavigator';
 import AppNavigator from './AppNavigator';
 import { AppAuth, onAuthStateChanged } from '../utils/firebaseAuth';
 import { login, logout } from '../state/slices/authSlice';
-import NotificationPermissionModal from '../screens/main/EnableNotification';
-import LocationPermissionModal from '../screens/main/LocationPermissionModal';
+import NotificationPermissionModal from '../screens/main/utils/EnableNotification';
+import LocationPermissionModal from '../screens/main/utils/LocationPermissionModal';
+import SplashScreen from '../screens/SplashScreen';
+import RolePage from 'screens/auth/ChooseRole';
 
 const AppRootNavigator: React.FC = () => {
   const dispatch = useDispatch();
@@ -16,13 +17,24 @@ const AppRootNavigator: React.FC = () => {
   const [userLoggedIn, setUserLoggedIn] = useState<boolean>(false);
   const [showLocationModal, setShowLocationModal] = useState(true);
   const [showNotificationModal, setShowNotificationModal] = useState(true);
-
+  const [showSplash, setShowSplash] = useState(true);
+  const [roleSelected, setRoleSelected] = useState(false);
+  const [userId, setId] = useState('');
 
   useEffect(() => {
-    if ( !showNotificationModal) {
+    const splashTimeout = setTimeout(() => {
+      setShowSplash(false);
+    }, 2500);
+
+    return () => clearTimeout(splashTimeout);
+  }, []);
+
+  useEffect(() => {
+    if (!showNotificationModal) {
       const unsubscribe = onAuthStateChanged(AppAuth, user => {
         if (user) {
           dispatch(login({ uid: user.uid, email: user.email ?? undefined }));
+          setId(userId);
           setUserLoggedIn(true);
         } else {
           dispatch(logout());
@@ -34,6 +46,9 @@ const AppRootNavigator: React.FC = () => {
     }
   }, [showNotificationModal, dispatch]);
 
+  if (showSplash) {
+    return <SplashScreen />;
+  }
 
   if (showNotificationModal) {
     return (
@@ -61,11 +76,11 @@ const AppRootNavigator: React.FC = () => {
     );
   }
 
-  return (
-    <NavigationContainer>
-      {userLoggedIn ? <AppNavigator /> : <AuthNavigator />}
-    </NavigationContainer>
-  );
+  if (!userLoggedIn) {
+    return <AuthNavigator />;
+  }
+
+  return <AppNavigator />;
 };
 
 export default AppRootNavigator;

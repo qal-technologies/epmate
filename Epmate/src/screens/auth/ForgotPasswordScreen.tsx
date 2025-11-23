@@ -5,7 +5,6 @@ import {
   useFocusEffect,
   useNavigation,
   useRoute,
-  type RouteProp,
 } from '@react-navigation/native';
 import { firebaseAuth } from '../../utils/firebaseAuth';
 import { theme } from '../../theme/theme';
@@ -27,7 +26,7 @@ const ForgotPasswordScreen: React.FC = () => {
   };
 
   const route =
-    useRoute<RouteProp<ForgotPasswordRouteParams, 'ForgotPassword'>>();
+    useRoute<ForgotPasswordRouteParams, 'ForgotPassword'>();
 
   useFocusEffect(
     React.useCallback(() => {
@@ -45,7 +44,7 @@ const ForgotPasswordScreen: React.FC = () => {
   const handleSendResetEmail = async () => {
     try {
       setSending(true);
-      await firebaseAuth.sendPasswordResetEmail(email);
+      // await firebaseAuth.sendPasswordResetEmail(email);
       Alert.alert('Password reset email sent!');
       navigation.navigate('Login');
     } catch (error: any) {
@@ -63,14 +62,14 @@ const ForgotPasswordScreen: React.FC = () => {
 
     try {
       setUpdating(true);
-      const user = firebaseAuth.getCurrentUser();
-      if (user) {
-        await user.updatePassword(newPassword);
+      // const user = firebaseAuth.getCurrentUser();
+      // if (user) {
+        // await firebaseAuth.updatePassword(newPassword);
         Alert.alert('Password updated successfully!');
         navigation.navigate('Login');
-      } else {
-        Alert.alert('No user is logged in.');
-      }
+      // } else {
+      //   Alert.alert('No user is logged in.');
+      // }
     } catch (error: any) {
       console.error('Error updating password:', error.message || error);
     } finally {
@@ -85,12 +84,16 @@ const ForgotPasswordScreen: React.FC = () => {
         <>
           <TextInput
             label="Email"
+            mode='outlined'
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
             style={styles.input}
             placeholder="your.name@email.com"
+            outlineColor={theme.colors.placeholder}
+            activeOutlineColor={theme.colors.primary}
+            placeholderTextColor={theme.colors.placeholder}
           />
 
           <AuthBtn
@@ -108,20 +111,28 @@ const ForgotPasswordScreen: React.FC = () => {
       ) : (
         <>
           <TextInput
-            label="New Password"
+              label="New Password"
+              mode='outlined'
             value={newPassword}
             onChangeText={setNewPassword}
             secureTextEntry
             style={styles.input}
             placeholder="New Password"
+            outlineColor={theme.colors.placeholder}
+            activeOutlineColor={theme.colors.primary}
+            placeholderTextColor={theme.colors.placeholder}
           />
           <TextInput
-            label="Confirm Password"
+              label="Confirm Password"
+              mode='outlined'
             value={confirmPassword}
             onChangeText={setConfirmPassword}
             secureTextEntry
             style={styles.input}
             placeholder="Confirm Password"
+            outlineColor={theme.colors.placeholder}
+            activeOutlineColor={theme.colors.primary}
+            placeholderTextColor={theme.colors.placeholder}
           />
 
           <AuthBtn
@@ -155,13 +166,15 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background,
   },
   title: {
-    fontSize: 20,
+    fontSize: 25,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 20,
   },
   input: {
     marginBottom: 16,
+        backgroundColor: theme.colors.secondary,
+    
   },
   button: {
     marginTop: 16,

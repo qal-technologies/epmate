@@ -1,7 +1,10 @@
 import React from 'react';
 import { Text } from 'react-native-paper';
-import { Image, View, StyleSheet, Dimensions } from 'react-native';
+import { Image, View, StyleSheet, Dimensions, StatusBar } from 'react-native';
 import { theme } from '../theme/theme';
+import Animated, { FadeIn, FadeInDown, SlideInDown, SlideInUp } from 'react-native-reanimated';
+import { MaterialIcons } from '@expo/vector-icons';
+
 
 type Props = {
   withText?: boolean;
@@ -9,38 +12,78 @@ type Props = {
 
 const Banner: React.FC<Props> = ({ withText = true }) => {
   return (
-    <View style={styles.gnBg}>
-      <Image src={require('../assets/images/logo.jpg')} style={styles.image} />
-      {withText && (
-        <>
-          <Text style={styles.sub}>Get Help Anytime, Anywhere</Text>
-          <Text style={styles.small}>
-            From chores to repairs, deliveries, cooking, assignment and more -
-            your trusted helpers are one tap away.
-          </Text>
-        </>
-      )}
-    </View>
+    <>
+      <StatusBar
+        animated
+        barStyle="light-content"
+        backgroundColor={theme.colors.primary}
+        translucent
+      />
+      <Animated.View
+        entering={SlideInUp.springify()}
+        style={[
+          styles.gnBg,
+          {
+            maxHeight: !withText
+              ? Dimensions.get('screen').height / 3
+              : Dimensions.get('screen').height / 2,
+          },
+        ]}
+      >
+        <Image
+          source={require('../assets/images/logo.jpg')}
+          style={styles.image}
+        />
+        {withText && (
+          <View style={styles.bannerText}>
+            <Text style={styles.sub}>Get Help Anytime, Anywhere</Text>
+            <Text style={styles.small}>
+              From chores to repairs, deliveries, cooking, assignment and more -
+              your trusted helpers are one tap away.
+            </Text>
+          </View>
+        )}
+      </Animated.View>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
   image: {
-    maxWidth: '70%',
-    objectFit: 'cover',
+    maxWidth: '90%',
+    maxHeight: '90%',
+    flexShrink:0.8,
+    objectFit: 'contain',
+    alignSelf:'center'
   },
   gnBg: {
     backgroundColor: theme.colors.primary,
-    width: '100%',
+    width: Dimensions.get('window').width,
     display: 'flex',
-    justifyContent: 'center',
-    paddingBottom: 30,
+    justifyContent: 'space-evenly',
+    alignItems:'center',
+    flexDirection: 'column',
+    padding: 10,
+    paddingTop:20,
+    marginBottom: 15,
+    borderEndEndRadius: 60,
+    shadowColor: theme.colors.primaryTrans,
+    shadowRadius: 10,
+    shadowOffset: { width: 30, height: 10 },
+    shadowOpacity:.6,
+    borderStartEndRadius:60,
     textAlign: 'center',
-    minHeight: Dimensions.get('screen').height / 3,
+    height:'40%',
+    overflow: 'hidden',
+  },
+  bannerText: {
+    marginTop: 4,
+    width:'100%',
+    alignSelf:'center',
   },
   sub: {
-    fontSize: 16,
-    fontWeight: 'light',
+    fontSize: 25,
+    fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 5,
     color: 'white',
@@ -51,6 +94,7 @@ const styles = StyleSheet.create({
     fontWeight: 'light',
     textAlign: 'center',
     color: 'white',
+    opacity:.95,
     fontFamily: theme.fonts.regular,
   },
 });

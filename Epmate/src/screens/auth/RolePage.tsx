@@ -4,13 +4,13 @@ import { Button, Text } from 'react-native-paper';
 import { useDispatch } from 'react-redux';
 import { login } from '../../state/slices/authSlice';
 import { theme } from '../../theme/theme';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../navigation/types';
 import RadioBtn from '../../components/SelectBtn';
 
-type ChooseRoleScreenProps = NativeStackScreenProps<RootStackParamList, 'Role'>;
+interface Props {
+  onRoleSelect: () => void;
+}
 
-const ChooseRole: React.FC<ChooseRoleScreenProps> = ({ navigation }) => {
+const ChooseRole: React.FC<Props> = ({onRoleSelect}) => {
   const roles = [
     {
       name: 'helper',
@@ -32,7 +32,7 @@ const ChooseRole: React.FC<ChooseRoleScreenProps> = ({ navigation }) => {
   const handleContinue = () => {
     if (selectedRole) {
       dispatch(login({ role: selectedRole }));
-      navigation.navigate('Home');
+      onRoleSelect(); 
     }
   };
 

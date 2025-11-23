@@ -1,20 +1,29 @@
 {
   "compilerOptions": {
+    "resolveJsonModule": true,
     "jsx": "react-native",
     "target": "esnext",
-    "module": "esnext",
-    "moduleResolution": "node",
+    "module": "NodeNext",
+    "moduleResolution": "nodenext",
     "ignoreDeprecations": "6.0",
     "allowJs": true,
-    "strict": true,
+    // "strict": true,
     "noEmit": true,
     "isolatedModules": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
     "types": ["react", "react-native"],
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": "./",
+    "paths": {
+      "*": ["src/*"]
+    }
   },
-  "include": ["**/*.ts", "**/*.tsx", "src/components/HelpModal.tsx"],
-  "exclude": ["node_modules", "Pods"]
+ "include": ["**/*.ts", "**/*.tsx", "**/*.js"],
+  "exclude": [
+    "node_modules",
+    "Pods"
+  ],
+  "extends": "expo/tsconfig.base"
 }

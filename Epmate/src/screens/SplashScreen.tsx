@@ -1,12 +1,14 @@
 import React, { useEffect } from 'react';
 import { View, Image, StyleSheet } from 'react-native';
 import { theme } from '../theme/theme';
+import Animated, { ZoomIn } from 'react-native-reanimated';
 
 const SplashScreen: React.FC = () => {
   return (
     <View style={styles.container}>
-      <Image
-        source={require('../../assets/images/logo.jpg')}
+      <Animated.Image
+        entering={ZoomIn.springify()}
+        source={require('../assets/')}
         style={styles.logo}
       />
     </View>

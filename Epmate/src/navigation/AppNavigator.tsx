@@ -5,22 +5,25 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import HomeScreen from '../screens/main/HomeScreen';
 import ProfileScreen from '../screens/main/ProfileScreen';
-import AccountScreen from '../screens/main/AccountScreen';
-import PickupDelivery from '../screens/main/PickupDelivery';
-import TaskCompletionScreen from '../screens/main/TaskCompletionScreen';
-import RatingScreen from '../screens/main/RatingScreen';
+import PickupDelivery from '../screens/main/services/errands/pickup/PickupDelivery';
+import TaskCompletionScreen from '../screens/main/pages/Tasks/TaskCompletionScreen';
+import RatingScreen from '../screens/main/pages/RatingScreen';
 import IssueScreen from '../screens/main/IssueScreen';
-import PaymentScreen from '../screens/main/PaymentScreen';
-import MyTasksScreen from '../screens/main/MyTasksScreen';
-import SafetyScreen from '../screens/main/SafetyScreen';
+import PaymentScreen from '../screens/main/pages/PaymentScreen';
+import MyTasksScreen from '../screens/main/pages/Tasks/MyTasksScreen';
+import SafetyScreen from '../screens/main/pages/SafetyScreen';
 import CustomDrawerContent from './CustomDrawerContent';
 import { HomeStackParamList, MainTabParamList, DrawerParamList } from './types';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MaterialIcons } from '@expo/vector-icons';
-import ErrandsDeliveryModal from '../screens/main/ErrandsDeliveryModal';
-import ConfirmOrderScreen from '../screens/main/ConfirmOrderScreen';
-import ProcessingPaymentScreen from '../screens/main/ProcessingPaymentScreen';
-import CompletePaymentScreen from '../screens/main/CompletePaymentScreen';
+import ErrandsDeliveryModal from '../screens/main/services/errands/ErrandsDeliveryModal';
+import ConfirmOrderScreen from '../screens/main/services/payment/ConfirmOrderScreen';
+import ProcessingPaymentScreen from '../screens/main/services/payment/ProcessingPaymentScreen';
+import CompletePaymentScreen from '../screens/main/services/payment/CompletePaymentScreen';
+import SearchingHelpersModal from '../screens/main/services/utils/SearchingHelpersModal';
+import HelperListModal from '../screens/main/services/utils/HelperListModal';
+import ServiceSelectionModal from '../screens/main/ServiceSelectionModal';
+import { theme } from 'theme/theme';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const Stack = createNativeStackNavigator<HomeStackParamList>();
@@ -28,20 +31,91 @@ const Drawer = createDrawerNavigator<DrawerParamList>();
 
 const HomeStack: React.FC = () => {
   const [isSearching, setIsSearching] = useState(false);
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [showErrandModal, setShowErrandModal] = useState(false);
+  const [showHelperListModal, setShowHelperListModal] = useState(false);
+  const [currentService, setCurrentService] = useState('');
+  const [errandOption, setErrandOption] = useState('');
+  const [locationData, setLocationData] = useState<any>({
+    pickupLocation: null,
+    deliveryLocation: null,
+    userId: null,
+  });
+
+  const handleFindHelpers = () => {
+    setShowLocationModal(false);
+    setIsSearching(true);
+  };
+
+  const handleHelpersFound = () => {
+    setIsSearching(false);
+    setShowHelperListModal(true);
+  };
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Home">
         {(props: NativeStackScreenProps<HomeStackParamList, 'Home'>) => (
-          <HomeScreen {...(props as any)} isSearching={isSearching} />
-        )}
-      </Stack.Screen>
+          <>
+            <HomeScreen
+              {...(props as any)}
+              isSearching={isSearching}
+              currentService={currentService}
+            />
+            <ServiceSelectionModal
+              setCurrentService={setCurrentService}
+              onServiceSelect={() => setShowErrandModal(true)}
+            />
 
-      <Stack.Screen name="PickupDelivery">
-        {(
-          props: NativeStackScreenProps<HomeStackParamList, 'PickupDelivery'>,
-        ) => (
-          <PickupDelivery {...(props as any)} setIsSearching={setIsSearching} />
+            {showErrandModal && (
+              <ErrandsDeliveryModal
+                setErrandOption={option => {
+                  setErrandOption(option);
+                  setShowLocationModal(true);
+                }}
+                visible={showErrandModal}
+                onDismiss={() => setShowErrandModal(false)}
+              />
+            )}
+
+            {showLocationModal && (
+              <PickupDelivery
+                visible={showLocationModal}
+                onDismiss={() => setShowLocationModal(false)}
+                onFindHelpers={data => {
+                  setLocationData({
+                    pickupLocation: data.pickupLocation,
+                    deliveryLocation: data.deliveryLocation,
+                    userId: data.userId,
+                  });
+                  setShowLocationModal(false);
+                  setIsSearching(true);
+                }}
+              />
+            )}
+            {isSearching && (
+              <SearchingHelpersModal
+                visible={isSearching}
+                onHelpersFound={() => {
+                  setIsSearching(false);
+                  setShowHelperListModal(true);
+                }}
+              />
+            )}
+            {showHelperListModal && (
+              <HelperListModal
+                visible={showHelperListModal}
+                onDismiss={() => setShowHelperListModal(false)}
+                onAcceptHelper={helperData => {
+                  setShowHelperListModal(false);
+                  props.navigation.navigate('ConfirmOrder', {
+                    helperData,
+                    locationData,
+                  });
+                }}
+              />
+            )}
+          </>
         )}
       </Stack.Screen>
 
@@ -101,7 +175,7 @@ const MainTabs: React.FC = () => {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#00D09C',
+        tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: 'gray',
       }}
     >
@@ -116,8 +190,8 @@ const MainTabs: React.FC = () => {
       />
 
       <Tab.Screen
-        name="Account"
-        component={AccountScreen as React.ComponentType<any>}
+        name="Profile"
+        component={ProfileScreen as React.ComponentType<any>}
         options={{
           tabBarIcon: ({ color, size }) => (
             <MaterialIcons name="person" color={color} size={size} />
@@ -135,7 +209,7 @@ const AppNavigator: React.FC = () => {
       drawerContent={props => <CustomDrawerContent {...(props as any)} />}
       screenOptions={{
         headerShown: false,
-        drawerActiveTintColor: '#00D09C',
+        drawerActiveTintColor: theme.colors.primary,
         drawerInactiveTintColor: 'gray',
       }}
     >

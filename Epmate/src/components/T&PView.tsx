@@ -16,18 +16,18 @@ type Props = {
 
 const TPView: React.FC<Props> = ({ navigation }) => {
   return (
-    <View style={{ width: '90%', marginTop: 8 }}>
+    <View style={{ width: '90%', marginTop: 8, alignSelf: 'center' }}>
       <Text style={[styles.small, styles.sm, { color: 'black' }]}>
         By continuing, you agree to Epmate's{' '}
         <Text style={styles.link} onPress={() => navigation.navigate('Terms')}>
           Terms of Service
         </Text>{' '}
-        and
+        and{' '}
         <Text style={styles.link} onPress={() => navigation.navigate('Policy')}>
           Privacy Policy.
         </Text>
       </Text>
-      <Text style={[styles.small, styles.sm, { color: 'black' }]}>
+      <Text style={[styles.small, styles.sm, { color: 'black', marginTop:2 }]}>
         You may receive notifications about your tasks and helpers. You can
         unsubsibe.
       </Text>

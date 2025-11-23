@@ -1,85 +1,95 @@
 // utils/firebase/firebaseAuth.ts
-import { initializeApp } from 'firebase/app';
-import auth, { FirebaseAuthTypes} from '@react-native-firebase/auth';
 import {
+  initializeAuth,
   getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithCredential,
+  sendPasswordResetEmail,
+  signOut,
   onAuthStateChanged,
+  updatePassword,
+  updateEmail,
+  updateCurrentUser,
+  setPersistence,
+  browserLocalPersistence,
 } from 'firebase/auth';
-import {
-  GoogleSignin,
-  statusCodes,
-  User as GoogleUser,
-  SignInResponse,
-  SignInSuccessResponse,
-} from '@react-native-google-signin/google-signin';
+// import {
+//   GoogleSignin,
+//   statusCodes,
+//   SignInResponse,
+//   SignInSuccessResponse,
+// } from '@react-native-google-signin/google-signin';
 import { app } from './firebaseConfig';
+import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
-// Configure Google Sign-In
-GoogleSignin.configure({
-  webClientId: 'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com',
+// // Configure Google Sign-In
+// GoogleSignin.configure({
+//   webClientId: 'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com',
+// });
+
+const auth = initializeAuth(app, {
+  persistence: browserLocalPersistence,
 });
 
-type AuthResponse = FirebaseAuthTypes.UserCredential;
+type AuthResponse = any; // Adjust as needed for Firebase UserCredential
 
 const firebaseAuth = {
   signUpWithEmail: async (
     email: string,
-    password: string,
+    password: string
   ): Promise<AuthResponse> => {
-    return auth().createUserWithEmailAndPassword(email, password);
+    return createUserWithEmailAndPassword(auth, email, password);
   },
 
   signInWithEmail: async (
     email: string,
-    password: string,
+    password: string
   ): Promise<AuthResponse> => {
-    return auth().signInWithEmailAndPassword(email, password);
+    return signInWithEmailAndPassword(auth, email, password);
   },
 
-  signInWithGoogle: async (): Promise<AuthResponse> => {
-    // First, make sure Google Play services (if Android) are available
-    await GoogleSignin.hasPlayServices();
+  // signInWithGoogle: async (): Promise<AuthResponse> => {
+  //   await GoogleSignin.hasPlayServices();
+  //   const result: SignInResponse = await GoogleSignin.signIn();
 
-    const result: SignInResponse = await GoogleSignin.signIn();
+  //   if (result.type !== 'success') {
+  //     throw new Error('Google sign in was cancelled');
+  //   }
 
-    // Check if response is success
-    if (result.type !== 'success') {
-      throw new Error('Google sign in was cancelled');
-    }
+  //   const successResult = result as SignInSuccessResponse;
+  //   const { idToken } = successResult.data;
+  //   if (!idToken) {
+  //     throw new Error('No idToken from Google Sign-In');
+  //   }
 
-    // Here, result is SignInSuccessResponse
-    const successResult = result as SignInSuccessResponse; // fix below
-
-    const { idToken } = successResult.data; // in v13+, data has idToken
-    if (!idToken) {
-      throw new Error('No idToken from Google Sign-In');
-    }
-
-    // Create a Firebase credential with the token
-    const googleCredential = auth.GoogleAuthProvider.credential(idToken);
-
-    // Sign in with credential
-    return auth().signInWithCredential(googleCredential);
-  },
+  //   const googleCredential = GoogleAuthProvider.credential(idToken);
+  //   return signInWithCredential(auth, googleCredential);
+  // },
 
   sendPasswordResetEmail: async (email: string): Promise<void> => {
     const extraDetails = {
       url: 'https://www.epmate.com/forgotPassword?type=reset',
       indoors: true,
       dynamicLinkDomain: 'epmate.com',
-    }
-    return auth().sendPasswordResetEmail(email, {handleCodeInApp: true, ...extraDetails});
+    };
+    return sendPasswordResetEmail(auth, email, extraDetails);
   },
 
   signOut: async (): Promise<void> => {
-    return auth().signOut();
+    return signOut(auth);
   },
 
-  getCurrentUser: (): FirebaseAuthTypes.User | null => {
-    return auth().currentUser;
+  getCurrentUser: () => {
+    return auth.currentUser;
   },
+
+  updatePassword:async (passoword)=>{
+    return await updatePassword(auth.currentUser, passoword);
+  }
 };
 
-export const AppAuth = getAuth(app);
+export const AppAuth = auth;
 export { onAuthStateChanged };
 export { firebaseAuth };

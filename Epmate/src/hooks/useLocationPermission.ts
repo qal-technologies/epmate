@@ -1,21 +1,19 @@
 import { useState, useEffect } from "react";
-import { check, PERMISSIONS, PermissionStatus } from "react-native-permissions";
-import { Platform } from "react-native";
+import * as Location from "expo-location";
 
-export const useLocationPermission = () => {
+export const useLocationPermission = async () => {
   const [permissionGranted, setPermissionGranted] = useState < boolean > (false);
 
   useEffect(() => {
-    const permission =
-      Platform.OS === "ios"
-        ? PERMISSIONS.IOS.LOCATION_WHEN_IN_USE
-        : PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION;
-
-    check(permission).then((result: PermissionStatus) => {
-      if (result === "granted") {
+    const checkPermission = async () => {
+      const { status } = await Location.getForegroundPermissionsAsync();
+      if (status === 'granted') {
         setPermissionGranted(true);
+        return;
       }
-    });
+      console.log('Location permissions denied.');
+    };
+    checkPermission();
   }, []);
 
   return permissionGranted;

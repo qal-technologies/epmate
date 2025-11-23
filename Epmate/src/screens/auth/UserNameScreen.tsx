@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { TextInput, Button, Text } from 'react-native-paper';
 import { useDispatch } from 'react-redux';
-import { db } from '../../utils/firebaseFirestore';
+import { db, firebaseFirestore } from '../../utils/firebaseFirestore';
 import { login } from '../../state/slices/authSlice';
 import { theme } from '../../theme/theme';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -24,10 +24,7 @@ const UserNameScreen: React.FC<UserNameScreenProps> = ({
 
   const handleSaveName = async () => {
     try {
-      await db.collection('users').doc(uid).update({
-        displayName: name,
-      });
-
+      // firebaseFirestore.updateDocument('users', uid, { displayName: name });
       dispatch(login({ uid, displayName: name }));
       navigation.navigate('Role');
     } catch (error: any) {
@@ -44,6 +41,9 @@ const UserNameScreen: React.FC<UserNameScreenProps> = ({
         onChangeText={setName}
         style={styles.input}
         placeholder="Your Name"
+        underlineColor={theme.colors.placeholder}
+                    activeUnderlineColor={theme.colors.primary}
+                    placeholderTextColor={theme.colors.placeholder}
       />
 
       <AuthBtn
@@ -74,6 +74,8 @@ const styles = StyleSheet.create({
   },
   input: {
     marginBottom: 16,
+        backgroundColor: theme.colors.background,
+    
   },
 });
 

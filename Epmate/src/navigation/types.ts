@@ -29,7 +29,7 @@ export type AuthStackParamList = {
   Signup: undefined;
   Terms: undefined;
   Policy: undefined;
-  Role: { userId?: string } | undefined;
+  Role: { userId?: string;} | undefined;
   userName: { userId?: string } | undefined;
   forgotPassword: { userId?: string } | undefined;
 };

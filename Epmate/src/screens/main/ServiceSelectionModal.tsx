@@ -1,91 +1,143 @@
-import {
-  MaterialCommunityIcons,
-} from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import AuthBtn from 'components/AuthButton';
+import RadioBtn from 'components/SelectBtn';
 import React, { useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Button, RadioButton } from 'react-native-paper';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Dimensions,
+  Alert,
+} from 'react-native';
+import { Button, RadioButton, TouchableRipple } from 'react-native-paper';
 import type { IconProps } from 'react-native-paper/lib/typescript/components/MaterialCommunityIcon';
-
-const services: { name: string; icon: IconProps | string }[] = [
-  { name: 'Errands & Delivery', icon: 'briefcase' },
-  { name: 'House Chores', icon: 'home-lightbulb' },
-  { name: 'Cooking', icon: 'chef-hat' },
-  { name: 'Home Repairs & Technical Help', icon: 'toolbox' },
-  { name: 'Project & Assignments', icon: 'pen' },
-];
+import { theme } from 'theme/theme';
 
 interface Props {
-  onSelectErrands: () => void;
+  onServiceSelect: () => void;
+  setCurrentService: (service: string) => void;
 }
 
-const ServiceSelectionModal: React.FC<Props> = ({ onSelectErrands }) => {
+const ServiceSelectionModal: React.FC<Props> = ({
+  onServiceSelect,
+  setCurrentService,
+}) => {
+  const services: {
+    name: string;
+    icon: IconProps | string;
+    serviceKey: string;
+  }[] = [
+    { name: 'Errands & Delivery', icon: 'briefcase', serviceKey: 'errand' },
+    { name: 'House Chores', icon: 'home-lightbulb', serviceKey: 'chores' },
+    { name: 'Cooking', icon: 'chef-hat', serviceKey: 'cooking' },
+    {
+      name: 'Home Repairs & Technical Help',
+      icon: 'toolbox',
+      serviceKey: 'repairs',
+    },
+    { name: 'Project & Assignments', icon: 'pen', serviceKey: 'projects' },
+  ];
+
   const [selectedService, setSelectedService] = useState('');
 
   const handleSelectClick = async () => {
     // when we create more function we add them here:
     if (selectedService) {
-      switch (selectedService) {
-        case 'Errand & Delivery':
-          onSelectErrands();
-        default:
-          null;
+      const selectedServiceObj = services.find(
+        service => service.name === selectedService,
+      );
+
+      if (selectedServiceObj) {
+        if (selectedServiceObj.serviceKey != 'errand') {
+          Alert.alert('Coming soon... Please select another option');
+        } else {
+          setCurrentService(selectedServiceObj.serviceKey);
+          onServiceSelect();
+        }
       }
     }
   };
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{
+        paddingBottom: 20,
+      }}
+    >
       <Text style={styles.title}>What do you need help with today?</Text>
-      <RadioButton.Group
-        onValueChange={setSelectedService}
-        value={selectedService}
-      >
+
+      <View>
         {services.map(service => (
-          <Button
+          <TouchableOpacity
             key={service.name}
-            mode={selectedService === service.name ? 'contained' : 'outlined'}
-            style={styles.serviceButton}
-            icon={() => (
-              <MaterialCommunityIcons
-                name={service.icon}
-                size={24}
-                color={selectedService === service.name ? 'white' : '#00D09C'}
-              />
-            )}
-            onPress={() => setSelectedService(service.name)}
+            style={[
+              styles.serviceButton,
+              {
+                backgroundColor:
+                  selectedService === service.name
+                    ? theme.colors.primaryTrans
+                    : 'transparent',
+              },
+            ]}
+            onPress={() => {
+              setCurrentService(service.name);
+              setSelectedService(service.name);
+            }}
           >
-            {service.name}
-          </Button>
+            <MaterialCommunityIcons
+              name={service.icon}
+              size={25}
+              color={theme.colors.primary}
+            />
+            <Text style={{ fontWeight: 'bold', fontSize: 16 }}>
+              {service.name}
+            </Text>
+          </TouchableOpacity>
         ))}
-      </RadioButton.Group>
-      <Button
-        mode="contained"
+      </View>
+
+      <AuthBtn
+        btnText="Continue"
         disabled={selectedService === ''}
-        onPress={() => handleSelectClick}
-      >
-        Continue
-      </Button>
-    </View>
+        onClick={handleSelectClick}
+        btnMode="contained"
+        btnStyle="solid"
+        rounded
+        style={{ marginTop: 10 }}
+        mv
+      />
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
-  },
-  radioButtonContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
+    // flex: 0.8,
+    padding: 10,
+    paddingTop: 30,
+    borderStartStartRadius: 20,
+    borderStartEndRadius: 20,
+    maxHeight: Dimensions.get('screen').height / 1.9,
   },
   title: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
   },
   serviceButton: {
-    marginBottom: 10,
+    marginBottom: 3,
     justifyContent: 'flex-start',
+    padding: 12,
+    borderRadius: 20,
+    borderColor: theme.colors.primary,
+    alignItems: 'center',
+    color: theme.colors.primary,
+    display: 'flex',
+    flexDirection: 'row',
+    gap: 10,
   },
 });
 

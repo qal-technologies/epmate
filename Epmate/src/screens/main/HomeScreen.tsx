@@ -1,22 +1,20 @@
 // screens/main/HomeScreen.tsx
 import React, { useRef, useEffect, useState } from 'react';
-import { StyleSheet, View, Alert } from 'react-native';
+import { StyleSheet, View, Alert, StatusBar } from 'react-native';
 import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useNavigation } from '@react-navigation/native';
-import DraggableModal from './DraggableModal';
-import ServiceSelectionModal from './ServiceSelectionModal';
-import { IconButton } from 'react-native-paper';
+import { IconButton, Text } from 'react-native-paper';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSelector } from 'react-redux';
-import SearchingHelpersModal from './SearchingHelpersModal';
-import HelperListModal from './HelperListModal';
+import { theme } from 'theme/theme';
 
 interface Props {
   userId?: string | null;
+  currentService?: string | null;
 }
 
-const HomeScreen: React.FC<Props> = ({ userId }) => {
+const HomeScreen: React.FC<Props> = ({ userId, currentService }) => {
   const navigation = useNavigation<any>();
   const mapRef = useRef<MapView>(null);
   const storedUserId = useSelector((state: any) => state.auth.user?.id);
@@ -50,6 +48,7 @@ const HomeScreen: React.FC<Props> = ({ userId }) => {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      <StatusBar translucent backgroundColor={'transparent'} />
       <View style={styles.container}>
         <MapView
           ref={mapRef}
@@ -63,25 +62,10 @@ const HomeScreen: React.FC<Props> = ({ userId }) => {
           }}
         />
         <IconButton
-          icon={() => <MaterialIcons name="menu" size={28} color="white" />}
+          icon={() => <MaterialIcons name="menu" size={28} color="black" />}
           style={styles.menuButton}
           onPress={() => navigation.openDrawer()}
         />
-        <DraggableModal>
-          <ServiceSelectionModal
-            onSelectErrands={() =>
-              navigation.navigate('ErrandType', {
-                visible: true,
-              })
-            }
-          />
-
-          <SearchingHelpersModal visible={isSearching} />
-          <HelperListModal
-            visible={isHelperListVisible}
-            onDismiss={hideHelperList}
-          />
-        </DraggableModal>
       </View>
     </GestureHandlerRootView>
   );
@@ -94,7 +78,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   map: { ...StyleSheet.absoluteFillObject },
-  menuButton: { position: 'absolute', top: 40, left: 10, zIndex: 1 },
+  menuButton: {
+    position: 'absolute',
+    top: 40,
+    left: 10,
+    zIndex: 1,
+    backgroundColor: theme.colors.secondary,
+  },
 });
 
 export default HomeScreen;
