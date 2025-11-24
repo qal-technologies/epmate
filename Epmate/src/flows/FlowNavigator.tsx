@@ -1,12 +1,17 @@
 import React from 'react';
-import { View, StyleSheet, Dimensions, ActivityIndicator, Modal } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  Dimensions,
+  ActivityIndicator,
+  Modal,
+} from 'react-native';
 import { flowRegistry } from './core/FlowRegistry';
 import { useFlow } from './core/FlowInstance';
 import Reanimated, {
   useSharedValue,
   useAnimatedStyle,
-  withTiming,
-  Easing,
+  withSpring,
 } from 'react-native-reanimated';
 
 import BottomSheet, {
@@ -16,6 +21,9 @@ import BottomSheet, {
 import { MaterialIcons } from '@expo/vector-icons';
 import { theme } from '../theme/theme';
 import { TouchableRipple, Text } from 'react-native-paper';
+import {} from './core/Wrappers/FlowPage'
+import {ModalFlow} from './core/Wrappers/FlowModal';
+
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -86,14 +94,6 @@ const FullScreenPageWrapper = React.memo(function FullScreenPageWrapper({
 
   React.useEffect(() => {
     runtime.onAnimationComplete(parentId, true);
-    const inConfig = {
-      duration: 300,
-      easing: Easing.out(Easing.poly(4)),
-    };
-    const outConfig = {
-      duration: 150,
-      easing: Easing.in(Easing.poly(4)),
-    };
 
     switch (animationType) {
       case 'slideBottom':
@@ -113,9 +113,9 @@ const FullScreenPageWrapper = React.memo(function FullScreenPageWrapper({
         break;
     }
 
-    opacity.value = withTiming(1, inConfig);
-    translateX.value = withTiming(0, inConfig);
-    translateY.value = withTiming(0, inConfig, () => {
+    opacity.value = withSpring(1);
+    translateX.value = withSpring(0);
+    translateY.value = withSpring(0, {}, () => {
       runtime.onAnimationComplete(parentId, false);
     });
 
@@ -123,22 +123,22 @@ const FullScreenPageWrapper = React.memo(function FullScreenPageWrapper({
       runtime.onAnimationComplete(parentId, true);
       switch (animationType) {
         case 'slideBottom':
-          translateY.value = withTiming(SCREEN_HEIGHT, outConfig);
+          translateY.value = withSpring(SCREEN_HEIGHT);
           break;
         case 'slideTop':
-          translateY.value = withTiming(-SCREEN_HEIGHT, outConfig);
+          translateY.value = withSpring(-SCREEN_HEIGHT);
           break;
         case 'slideLeft':
-          translateX.value = withTiming(-SCREEN_WIDTH, outConfig);
+          translateX.value = withSpring(-SCREEN_WIDTH);
           break;
         case 'slideRight':
-          translateX.value = withTiming(SCREEN_WIDTH, outConfig);
+          translateX.value = withSpring(SCREEN_WIDTH);
           break;
         default:
-          opacity.value = withTiming(0, outConfig);
+          opacity.value = withSpring(0);
           break;
       }
-      opacity.value = withTiming(0, outConfig, () => {
+      opacity.value = withSpring(0, {}, () => {
         runtime.onAnimationComplete(parentId, false);
       });
     };
@@ -375,7 +375,9 @@ const FlowNavigator: React.FC = () => {
   React.useEffect(() => {
     const updateActiveFlows = () => {
       const debug = flowRegistry.debugTree();
-      const parents = (debug.nodes || []).filter((n: any) => n.parentId === null);
+      const parents = (debug.nodes || []).filter(
+        (n: any) => n.parentId === null,
+      );
       const active = parents.map((p: any) => ({
         parentNode: p,
         activeNode: runtime.getActive(p.id),
