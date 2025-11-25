@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  View,
-  StyleSheet,
-  Dimensions,
-  ActivityIndicator,
-  Modal,
-} from 'react-native';
+import { View, StyleSheet, Dimensions, ActivityIndicator, Modal } from 'react-native';
 import { flowRegistry } from './core/FlowRegistry';
 import { useFlow } from './core/FlowInstance';
 import Reanimated, {
@@ -23,7 +17,6 @@ import { theme } from '../theme/theme';
 import { TouchableRipple, Text } from 'react-native-paper';
 import {} from './core/Wrappers/FlowPage'
 import {ModalFlow} from './core/Wrappers/FlowModal';
-
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -375,9 +368,7 @@ const FlowNavigator: React.FC = () => {
   React.useEffect(() => {
     const updateActiveFlows = () => {
       const debug = flowRegistry.debugTree();
-      const parents = (debug.nodes || []).filter(
-        (n: any) => n.parentId === null,
-      );
+      const parents = (debug.nodes || []).filter((n: any) => n.parentId === null);
       const active = parents.map((p: any) => ({
         parentNode: p,
         activeNode: runtime.getActive(p.id),

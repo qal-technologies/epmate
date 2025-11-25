@@ -16,12 +16,8 @@ export type SizeType = 'full' | 'half' | 'bottom';
  * @category Core
  * @description Defines the type of animation for a flow transition.
  */
-export type AnimationType =
-  | 'slideBottom'
-  | 'slideTop'
-  | 'slideLeft'
-  | 'slideRight'
-  | 'fade';
+export type AnimationType = 'slideBottom' | 'slideTop' | 'slideLeft' | 'slideRight' | 'fade';
+
 
 /**
  * @category Configuration
@@ -44,7 +40,8 @@ export type AtEndConfig =
     }
   | undefined;
 
-/**
+
+  /**
  * @category Props
  * @description Props for a child component within a flow.
  * @template T - A generic type for the `extras` prop, allowing for custom data to be passed.
@@ -71,12 +68,7 @@ export type FlowChildProps<T = Record<string, any>> = {
   name: string;
   page: React.ReactNode;
   size?: SizeType;
-  animationType?:
-    | 'slideBottom'
-    | 'slideTop'
-    | 'slideLeft'
-    | 'slideRight'
-    | 'fade';
+  animationType?: 'slideBottom' | 'slideTop' | 'slideLeft' | 'slideRight' | 'fade';
   draggable?: boolean;
   dismissable?: boolean;
   title?: string;

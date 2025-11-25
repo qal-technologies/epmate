@@ -9,16 +9,35 @@ const Flow = useFlow().create();
 const InternalNavSample: React.FC<{ flow?: any }> = ({ flow }) => (
   <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
     <Text>Internal Navigation Sample</Text>
-    <Button title="Next" onPress={() => flow.next()} />
+    <Button title="Set State and Go to Next" onPress={() => {
+      flow.api.setFlowState('onboarding', { from: 'step1' });
+      flow.api.next();
+    }} />
   </View>
 );
+
+const StateDisplaySample: React.FC<{ flow?: any }> = ({ flow }) => {
+  const [state, setState] = React.useState<any>({});
+
+  React.useEffect(() => {
+    setState(flow.api.getFlowState('onboarding'));
+  }, [flow]);
+
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <Text>State from previous step:</Text>
+      <Text>{JSON.stringify(state)}</Text>
+      <Button title="Next" onPress={() => flow.api.next()} />
+    </View>
+  );
+};
 
 const NeighborNavSample: React.FC<{ flow?: any }> = ({ flow }) => (
   <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
     <Text>Neighbor Navigation Sample</Text>
     <Button
       title="Open Settings"
-      onPress={() => flow.open('settings', 'options')}
+      onPress={() => flow.api.open('settings', 'options')}
     />
   </View>
 );
