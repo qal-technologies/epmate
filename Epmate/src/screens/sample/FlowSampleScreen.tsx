@@ -9,8 +9,8 @@ const Page = ({ flow, title }: { flow?: any; title: string }) => (
   <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
     <Text>{title}</Text>
     <View style={{ position: 'absolute', bottom: 50, left: 0, right: 0, flexDirection: 'row', justifyContent: 'space-around' }}>
-      <Button title="Prev" onPress={() => flow.prev()} />
-      <Button title="Next" onPress={() => flow.next()} />
+      <Button title="Prev" onPress={() => flow.api.prev()} />
+      <Button title="Next" onPress={() => flow.api.next()} />
     </View>
   </View>
 );
