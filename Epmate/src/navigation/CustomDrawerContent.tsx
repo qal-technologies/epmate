@@ -50,16 +50,19 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = props => {
     props.navigation.navigate('RegisterHelper');
   };
 
+  
+  
   return (
     <DrawerContentScrollView {...props} contentContainerStyle={{ flex: 1 }}>
       <View style={styles.userInfoSection}>
-        <View
+        <TouchableOpacity
           style={{
             flexDirection: 'row',
             alignItems: 'center',
             gap: 15,
             justifyContent: 'flex-start',
           }}
+          onPress={() => props.navigation.navigate('Profile')}
         >
           <Avatar.Icon
             size={60}
@@ -71,7 +74,7 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = props => {
             <Text style={styles.userName}>{userName}</Text>
             <Text style={styles.myAccountText}>My Account</Text>
           </View>
-        </View>
+        </TouchableOpacity>
 
         <View
           style={{
@@ -109,6 +112,8 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = props => {
               backgroundColor: theme.colors.primaryTrans,
               padding: 12,
               borderRadius: 15,
+              borderWidth: 1,
+              borderColor:theme.colors.primary,
               width: '100%',
               display: 'flex',
               flexDirection:'column',

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Modal, Portal, Button } from 'react-native-paper';
 import * as Location from 'expo-location';
-import { theme } from '../../theme/theme';
+import { theme } from '../../../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
 
 interface Props {

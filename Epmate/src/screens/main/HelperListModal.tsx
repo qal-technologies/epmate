@@ -7,6 +7,7 @@ import {
   View,
   Animated,
   Image,
+  Alert,
 } from 'react-native';
 import {
   Modal,
@@ -15,10 +16,11 @@ import {
   TextInput,
   ActivityIndicator,
 } from 'react-native-paper';
-import { useHelpers, type HelperData } from '../../hooks/useHelpers';
+import { useHelpers, type HelperData, } from '../../hooks/useHelpers';
 import { theme } from '../../theme/theme';
 import { MaterialIcons } from '@expo/vector-icons';
 import AuthBtn from '../../components/AuthButton';
+import MyInput from 'components/myInput';
 
 interface Props {
   visible: boolean;
@@ -41,7 +43,7 @@ const HelperListModal: React.FC<Props> = ({
     {
       id: '1',
       name: 'John Doe',
-      tagPrice: '$15/hr',
+      tagPrice: 'N1,500',
       rating: 4.5,
       tasks: 120,
       distance: 2.3,
@@ -51,7 +53,7 @@ const HelperListModal: React.FC<Props> = ({
     {
       id: '2',
       name: 'Jane Smith',
-      tagPrice: '$12/hr',
+      tagPrice: 'N2,250',
       rating: 4.7,
       tasks: 98,
       distance: 1.8,
@@ -61,7 +63,7 @@ const HelperListModal: React.FC<Props> = ({
     {
       id: '3',
       name: 'Mike Johnson',
-      tagPrice: '$10/hr',
+      tagPrice: 'N10,250',
       rating: 4.2,
       tasks: 75,
       distance: 3.1,
@@ -80,9 +82,11 @@ const HelperListModal: React.FC<Props> = ({
         useNativeDriver: false,
       }).start();
       timer = setInterval(
-        () => setCountdown(prev => (prev > 0 ? prev - 1 : 0)),
-        1000,
-      );
+        () => {
+          if (countdown == 0) Alert.alert('somthing happened');
+          setCountdown(prev => (prev > 0 ? prev - 1 : 0))
+        },
+        1000);
     } else colorAnim.setValue(0);
 
     return () => clearInterval(timer);
@@ -90,10 +94,10 @@ const HelperListModal: React.FC<Props> = ({
 
   const backgroundColor = colorAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ['#00D09C', '#FFF'],
+    outputRange: [theme.colors.primary, '#FFF'],
   });
 
-  const handleAccept = (id) => {
+  const handleAccept = (id: any) => {
     if (id) {
       setSelectedHelper(id);
       const foundHelper = helpers.find(h => h.id === id);
@@ -120,11 +124,12 @@ const HelperListModal: React.FC<Props> = ({
         onDismiss={onDismiss}
         contentContainerStyle={styles.modal}
       >
-        <Text style={styles.title}>Available Helpers ({countdown}s)</Text>
+        <Text style={styles.title}>Available Helper Offers</Text>
         {isLoading && (
-          <Text>
-            <ActivityIndicator color={theme.colors.primary} size={'large'} />
-          </Text>
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+            <ActivityIndicator color={theme.colors.primary} size={'large'} style={{ alignSelf: 'center' }} />
+            <Text style={{ fontSize: 25, color: theme.colors.primary, marginTop: 10, textAlign: 'center', fontWeight: 'bold' }}>Fetching...</Text>
+          </View>
         )}
         {!isError && (
           <View
@@ -142,7 +147,7 @@ const HelperListModal: React.FC<Props> = ({
               color={theme.colors.primary}
               size={80}
             />
-            <Text style={{ fontFamily: theme.fonts.bold, fontSize: 20 }}>
+            <Text style={{ fontSize: 25, color: theme.colors.primary, marginTop: 10, textAlign: 'center', fontWeight: 'bold' }}>
               Error fetching helpers
             </Text>
           </View>
@@ -155,7 +160,9 @@ const HelperListModal: React.FC<Props> = ({
                 marginBlock: 12,
                 flex: 1,
                 paddingBottom: 20,
+                overflow: 'scroll'
               }}
+
               keyExtractor={item => item.id}
               scrollEnabled={true}
               renderItem={({ item }) => (
@@ -166,11 +173,13 @@ const HelperListModal: React.FC<Props> = ({
                   key={item.name}
                 />
               )}
+
+
             />
 
             <View
               style={{
-                width: '100%',
+                minWidth: '100%',
                 backgroundColor: theme.colors.secondary,
                 justifyContent: 'center',
                 gap: 6,
@@ -178,7 +187,7 @@ const HelperListModal: React.FC<Props> = ({
                 borderRadius: 18,
               }}
             >
-              <Text style={{ fontSize: 14, color: 'grey', opacity: 0.9 }}>
+              <Text style={{ fontSize: 14, color: 'grey', opacity: 0.9, fontStyle: 'italic', textAlign:'center', marginTop:10 }}>
                 A higher price may attract more helpers
               </Text>
               <TextInput
@@ -191,9 +200,8 @@ const HelperListModal: React.FC<Props> = ({
                 mode="outlined"
                 outlineColor={theme.colors.placeholder}
                 activeOutlineColor={theme.colors.primary}
-                keyboardType="numeric"
-              />
-
+                keyboardType="numeric" />
+              
               <AuthBtn
                 btnText="SUBMIT OFFER"
                 btnStyle="solid"
@@ -223,7 +231,7 @@ const HelperItem: React.FC<HelperProps> = ({
 }) => {
   if (item) {
     return (
-      <View style={styles.helperItem} key={item.id}>
+      <Animated.View style={styles.helperItem} key={item.id} >
         <View style={styles.helperImage}>
           {item.image ? (
             <Image
@@ -244,10 +252,10 @@ const HelperItem: React.FC<HelperProps> = ({
           )}
         </View>
         <View style={styles.helperInfo}>
-          <Text style={{ fontSize: 20, fontWeight: 'bold', flexWrap: 'wrap' }}>
+          <Text style={{ fontSize: 18, fontWeight: 'bold', flexWrap: 'wrap' }}>
             {item.name}
           </Text>
-          <Text style={{ fontSize: 14, fontWeight: 'bold', marginBottom: 2 }}>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 2 }}>
             {item.tagPrice}
           </Text>
           <View
@@ -264,7 +272,7 @@ const HelperItem: React.FC<HelperProps> = ({
           </View>
           <Text style={{ fontSize: 12 }}> Total tasks: {item.tasks}</Text>
           <Text style={{ fontSize: 12 }}>
-            Distance: {item.distance ? item.distance : '0'} km away
+            Distance: {item.distance ? item.distance : '0'} mins away
           </Text>
         </View>
 
@@ -285,7 +293,7 @@ const HelperItem: React.FC<HelperProps> = ({
             ACCEPT
           </Text>
         </Animated.View>
-      </View>
+      </Animated.View>
     );
   }
 };
@@ -297,10 +305,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: 20,
+    fontSize: 25,
     fontWeight: 'bold',
+    marginVertical: 20,
     marginBottom: 20,
-    textAlign: 'center',
+    textAlign: 'left',
   },
   helperItem: {
     marginBottom: 10,
@@ -308,13 +317,13 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.secondary,
     borderColor: '#eee',
     borderWidth: 1,
-    borderRadius: 15,
-    display: 'flex',
+    borderRadius: 18,
     flexDirection: 'row',
     width: '100%',
-    gap: 10,
+    gap: 8,
     alignItems: 'center',
     flexWrap: 'wrap',
+    justifyContent: 'center',
   },
   helperImage: {
     width: 50,

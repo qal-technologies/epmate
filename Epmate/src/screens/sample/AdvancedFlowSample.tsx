@@ -1,10 +1,8 @@
 import React from 'react';
 import { View, Button } from 'react-native';
 import { useFlow } from '../../flows';
-import FlowNavigator from '../../flows/FlowNavigator';
 import { Text } from 'react-native-paper';
 
-const Flow = useFlow().create();
 
 const InternalNavSample: React.FC<{ flow?: any }> = ({ flow }) => (
   <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -42,19 +40,36 @@ const NeighborNavSample: React.FC<{ flow?: any }> = ({ flow }) => (
   </View>
 );
 
+const AutoNavSample: React.FC<{ flow?: any }> = ({ flow }) => {
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      flow.api.next();
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [flow]);
+
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <Text>Auto Navigating in 2 seconds...</Text>
+    </View>
+  );
+};
+
 const AdvancedFlowSample = () => {
+  const Flow = useFlow().create();
+  
   return (
     <>
-      <Flow.Navigator>
-        <Flow.Page name="onboarding">
-          <Flow.Page.FC name="step1" page={<InternalNavSample />} />
-          <Flow.Page.FC name="step2" page={<NeighborNavSample />} />
-        </Flow.Page>
-        <Flow.Modal name="settings">
-          <Flow.Modal.FC name="options" page={<Text>Settings Page</Text>} />
-        </Flow.Modal>
-      </Flow.Navigator>
-      <FlowNavigator />
+      <Flow.Page name="onboarding">
+        <Flow.Page.FC name="step1" page={<InternalNavSample />} />
+        <Flow.Page.FC name="step2" page={<StateDisplaySample />} />
+        <Flow.Page.FC name="step3" page={<AutoNavSample />} />
+        <Flow.Page.FC name="step4" page={<NeighborNavSample />} />
+      </Flow.Page>
+      <Flow.Modal name="settings">
+        <Flow.Modal.FC name="options" page={<Text>Settings Page</Text>} />
+      </Flow.Modal>
+      <Flow.Navigator />
     </>
   );
 };

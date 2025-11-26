@@ -8,6 +8,7 @@ import { theme } from '../../theme/theme';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import AuthBtn from '../../components/AuthButton';
+import MyInput from 'components/myInput';
 
 type UserNameScreenProps = NativeStackScreenProps<
   RootStackParamList,
@@ -26,7 +27,7 @@ const UserNameScreen: React.FC<UserNameScreenProps> = ({
     try {
       // firebaseFirestore.updateDocument('users', uid, { displayName: name });
       dispatch(login({ uid, displayName: name }));
-      navigation.navigate('Role');
+      navigation.navigate('Home');
     } catch (error: any) {
       console.error('Error saving name:', error.message || error);
     }
@@ -34,18 +35,11 @@ const UserNameScreen: React.FC<UserNameScreenProps> = ({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Enter Your Name</Text>
-      <TextInput
-        label="Name"
-        value={name}
-        onChangeText={setName}
-        style={styles.input}
-        placeholder="Your Name"
-        underlineColor={theme.colors.placeholder}
-                    activeUnderlineColor={theme.colors.primary}
-                    placeholderTextColor={theme.colors.placeholder}
-      />
 
+      <View>
+        <MyInput type='text' value={name} setValue={setName} label='Enter Your Full Name' labelNote='This is just your display name and can be changed from the app settings' upperMb={5} selectionColor={theme.colors.primary} withLabel />
+      </View>
+      
       <AuthBtn
         btnMode="contained"
         btnStyle="solid"
@@ -53,7 +47,6 @@ const UserNameScreen: React.FC<UserNameScreenProps> = ({
         onClick={handleSaveName}
         disabled={name.trim().length === 0}
         mv
-        rounded
       />
     </View>
   );
@@ -62,9 +55,10 @@ const UserNameScreen: React.FC<UserNameScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    padding: 16,
-    backgroundColor: theme.colors.background,
+    alignItems:'center',
+    padding: 20,
+    paddingTop:80,
+    backgroundColor: theme.colors.secondary,
   },
   title: {
     fontSize: 20,
@@ -74,8 +68,8 @@ const styles = StyleSheet.create({
   },
   input: {
     marginBottom: 16,
-        backgroundColor: theme.colors.background,
-    
+    backgroundColor: theme.colors.background,
+
   },
 });
 

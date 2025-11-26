@@ -24,8 +24,8 @@ import SearchingHelpersModal from '../screens/main/services/utils/SearchingHelpe
 import HelperListModal from '../screens/main/HelperListModal';
 import ServiceSelectionModal from '../screens/main/ServiceSelectionModal';
 import { theme } from 'theme/theme';
-import FlowSampleScreen from '../screens/sample/FlowSampleScreen';
-import AdvancedFlowSample from '../screens/sample/AdvancedFlowSample';
+import FlowImprovementSample from '../screens/sample/FlowImprovementSample';
+import HelpModal from 'components/HelpModal';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const Stack = createNativeStackNavigator<HomeStackParamList>();
@@ -56,7 +56,7 @@ const HomeStack: React.FC = () => {
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Home">
+      <Stack.Screen name="Main">
         {(props: NativeStackScreenProps<HomeStackParamList, 'Home'>) => (
           <>
             <HomeScreen
@@ -65,6 +65,7 @@ const HomeStack: React.FC = () => {
               currentService={currentService}
             />
             <ServiceSelectionModal
+              isSearching={isSearching}
               setCurrentService={setCurrentService}
               onServiceSelect={() => setShowErrandModal(true)}
             />
@@ -185,7 +186,7 @@ const MainTabs: React.FC = () => {
         name="Home"
         component={HomeStack as React.ComponentType<any>}
         options={{
-          tabBarIcon: ({ color, size }) => (
+          tabBarIcon: ({ color, size }: any) => (
             <MaterialIcons name="home" color={color} size={size} />
           ),
         }}
@@ -195,7 +196,7 @@ const MainTabs: React.FC = () => {
         name="Profile"
         component={ProfileScreen as React.ComponentType<any>}
         options={{
-          tabBarIcon: ({ color, size }) => (
+          tabBarIcon: ({ color, size }: any) => (
             <MaterialIcons name="person" color={color} size={size} />
           ),
         }}
@@ -208,7 +209,7 @@ const MainTabs: React.FC = () => {
 const AppNavigator: React.FC = () => {
   return (
     <Drawer.Navigator
-      drawerContent={props => <CustomDrawerContent {...(props as any)} />}
+      drawerContent={(props:any) => <CustomDrawerContent {...(props as any)} />}
       screenOptions={{
         headerShown: false,
         drawerActiveTintColor: theme.colors.primary,
@@ -219,7 +220,7 @@ const AppNavigator: React.FC = () => {
         name="Main"
         component={MainTabs as React.ComponentType<any>}
         options={{
-          drawerIcon: ({ color, size }) => (
+          drawerIcon: ({ color, size }: any) => (
             <MaterialIcons name="home" color={color} size={size} />
           ),
         }}
@@ -229,7 +230,7 @@ const AppNavigator: React.FC = () => {
         name="Payment"
         component={PaymentScreen as React.ComponentType<any>}
         options={{
-          drawerIcon: ({ color, size }) => (
+          drawerIcon: ({ color, size }: any) => (
             <MaterialIcons name="payment" color={color} size={size} />
           ),
         }}
@@ -239,7 +240,7 @@ const AppNavigator: React.FC = () => {
         name="My Tasks"
         component={MyTasksScreen as React.ComponentType<any>}
         options={{
-          drawerIcon: ({ color, size }) => (
+          drawerIcon: ({ color, size }: any) => (
             <MaterialIcons name="check-circle" color={color} size={size} />
           ),
         }}
@@ -249,29 +250,29 @@ const AppNavigator: React.FC = () => {
         name="Safety"
         component={SafetyScreen as React.ComponentType<any>}
         options={{
-          drawerIcon: ({ color, size }) => (
+          drawerIcon: ({ color, size }: any) => (
             <MaterialIcons name="security" color={color} size={size} />
           ),
         }}
       />
-       <Drawer.Screen
+       {/* <Drawer.Screen
         name="Flow Sample"
         component={FlowSampleScreen as React.ComponentType<any>}
         options={{
-          drawerIcon: ({ color, size }) => (
+          drawerIcon: ({ color, size }: any) => (
             <MaterialIcons name="autorenew" color={color} size={size} />
           ),
         }}
-      />
-      <Drawer.Screen
-        name="Advanced Flow Sample"
-        component={AdvancedFlowSample as React.ComponentType<any>}
+      /> */}
+      {/* <Drawer.Screen
+        name="Flow Improvements"
+        component={FlowImprovementSample as React.ComponentType<any>}
         options={{
-          drawerIcon: ({ color, size }) => (
-            <MaterialIcons name="autorenew" color={color} size={size} />
+          drawerIcon: ({ color, size }: any) => (
+            <MaterialIcons name="build" color={color} size={size} />
           ),
         }}
-      />
+      /> */}
     </Drawer.Navigator>
   );
 };

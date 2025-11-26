@@ -1,11 +1,18 @@
 import React, { useEffect } from 'react';
-import { View, Image, StyleSheet } from 'react-native';
+import { View, Image, StyleSheet, StatusBar } from 'react-native';
 import { theme } from '../theme/theme';
 import Animated, { ZoomIn } from 'react-native-reanimated';
 
 const SplashScreen: React.FC = () => {
   return (
     <View style={styles.container}>
+      <StatusBar
+        animated
+        barStyle="light-content"
+        backgroundColor={theme.colors.primary}
+        translucent
+      />
+      
       <Animated.Image
         entering={ZoomIn.springify()}
         source={require('../assets/images/logoName.png')}
@@ -23,8 +30,8 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.primary,
   },
   logo: {
-    width: 200,
-    height: 200,
+    width: 250,
+    height: 250,
     resizeMode: 'contain',
   },
 });

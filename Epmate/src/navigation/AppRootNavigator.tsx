@@ -9,7 +9,6 @@ import { login, logout } from '../state/slices/authSlice';
 import NotificationPermissionModal from '../screens/main/utils/EnableNotification';
 import LocationPermissionModal from '../screens/main/utils/LocationPermissionModal';
 import SplashScreen from '../screens/SplashScreen';
-import RolePage from 'screens/auth/ChooseRole';
 
 const AppRootNavigator: React.FC = () => {
   const dispatch = useDispatch();
@@ -76,7 +75,7 @@ const AppRootNavigator: React.FC = () => {
     );
   }
 
-  if (!userLoggedIn) {
+  if (userLoggedIn) {
     return <AuthNavigator />;
   }
 

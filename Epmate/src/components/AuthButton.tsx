@@ -60,11 +60,11 @@ const AuthBtn: React.FC<Props> = ({
       buttonColor={btnColor[btnStyle]}
       style={[
         {
-          borderRadius: rounded ? 50 : 10,
+          borderRadius: rounded ? 50 : 12,
           marginVertical: mv ? 16 : 0,
           width: '90%',
           maxWidth: 350,
-          padding:5,
+          padding: 3,
           borderWidth: 1,
           borderStyle: 'solid',
           borderColor: border[btnStyle].borderColor,
@@ -78,7 +78,7 @@ const AuthBtn: React.FC<Props> = ({
       ]}
       onPress={onClick}
       icon={icon}
-      disabled={loading || disabled}
+      disabled={!!loading || !!disabled}
     >
       {!loading
         ? btnText

@@ -2,7 +2,7 @@ import React from 'react';
 import { Text } from 'react-native-paper';
 import { Image, View, StyleSheet, Dimensions, StatusBar } from 'react-native';
 import { theme } from '../theme/theme';
-import Animated, { FadeIn, FadeInDown, SlideInDown, SlideInUp } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, FadeInUp, FadeOutUp, SlideInDown, SlideInUp } from 'react-native-reanimated';
 import { MaterialIcons } from '@expo/vector-icons';
 
 
@@ -20,7 +20,8 @@ const Banner: React.FC<Props> = ({ withText = true }) => {
         translucent
       />
       <Animated.View
-        entering={SlideInUp.springify()}
+        entering={FadeInUp.springify()}
+        exiting={FadeOutUp.springify()} 
         style={[
           styles.gnBg,
           {
@@ -41,6 +42,8 @@ const Banner: React.FC<Props> = ({ withText = true }) => {
               From chores to repairs, deliveries, cooking, assignment and more -
               your trusted helpers are one tap away.
             </Text>
+
+            <Animated.Image source={require('../assets/images/handyman.png')} entering={FadeInDown.springify()} style={styles.handyman} />
           </View>
         )}
       </Animated.View>
@@ -50,33 +53,34 @@ const Banner: React.FC<Props> = ({ withText = true }) => {
 
 const styles = StyleSheet.create({
   image: {
-    maxWidth: '90%',
-    maxHeight: '90%',
-    flexShrink:0.8,
+    maxWidth: '50%',
+    maxHeight: '50%',
+    flexShrink: 0.8,
     objectFit: 'contain',
-    alignSelf:'center'
+    alignSelf: 'center',
+    marginTop: 20,
   },
   gnBg: {
     backgroundColor: theme.colors.primary,
     width: Dimensions.get('window').width,
     display: 'flex',
     justifyContent: 'space-evenly',
-    alignItems:'center',
+    alignItems: 'center',
     flexDirection: 'column',
     padding: 10,
-    paddingTop:20,
+    paddingTop: 40,
     marginBottom: 15,
     textAlign: 'center',
-    height:'40%',
+    height: '55%',
     overflow: 'hidden',
   },
   bannerText: {
-    marginTop: 4,
-    width:'100%',
-    alignSelf:'center',
+    width: '100%',
+    alignSelf: 'center',
+    marginTop: -30,
   },
   sub: {
-    fontSize: 22,
+    fontSize: 25,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 5,
@@ -88,8 +92,15 @@ const styles = StyleSheet.create({
     fontWeight: 'light',
     textAlign: 'center',
     color: 'white',
-    opacity:.95,
+    opacity: .95,
     fontFamily: theme.fonts.regular,
+  },
+  handyman: {
+    position: 'absolute',
+    top: 52,
+    width: 170,
+    height: 170,
+    alignSelf: 'center',
   },
 });
 

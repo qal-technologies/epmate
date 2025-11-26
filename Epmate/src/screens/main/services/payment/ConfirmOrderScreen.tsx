@@ -119,29 +119,13 @@ const ConfirmOrderScreen: React.FC<Props> = ({ navigation }) => {
       <AuthBtn
         btnText="CONFIRM ORDER"
         btnStyle="solid"
-        onClick={() => {
-          Alert.alert(
-            'Confirm Order',
-            'Are you sure you have confirmed the order details?',
-            [
-              {
-                text: 'Cancel',
-                style: 'cancel',
-              },
-              {
-                text: 'Yes',
-                isPreferred: true,
-                onPress: () => {
-                  navigation.navigate('CompletePayment', {
-                    helper: helperData,
-                    price: 1800,
-                    currency: '₦',
-                  });
-                },
-              },
-            ],
-          );
-        }}
+        onClick={() =>
+          navigation.navigate('CompletePayment', {
+            helper: helperData,
+            price: 1800,
+            currency: '₦',
+          })}
+
         btnMode="contained"
         mv
       />

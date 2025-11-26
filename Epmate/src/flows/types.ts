@@ -8,6 +8,12 @@ export type FlowType = 'modal' | 'page';
 
 /**
  * @category Core
+ * @description Theme options for flow components.
+ */
+export type FlowThemeType = 'light' | 'dark';
+
+/**
+ * @category Core
  * @description Defines the size of a flow, which can be 'full', 'half', or 'bottom'.
  */
 export type SizeType = 'full' | 'half' | 'bottom';
@@ -15,8 +21,22 @@ export type SizeType = 'full' | 'half' | 'bottom';
 /**
  * @category Core
  * @description Defines the type of animation for a flow transition.
+ * @property slideBottom - Slide from bottom to top
+ * @property slideTop - Slide from top to bottom
+ * @property slideLeft - Slide from left to right
+ * @property slideRight - Slide from right to left
+ * @property fade - Fade in/out
+ * @property zoom - Zoom in/out with scale
+ * @property none - No animation
  */
-export type AnimationType = 'slideBottom' | 'slideTop' | 'slideLeft' | 'slideRight' | 'fade';
+export type AnimationType = 
+  | 'slideBottom' 
+  | 'slideTop' 
+  | 'slideLeft' 
+  | 'slideRight' 
+  | 'fade' 
+  | 'zoom' 
+  | 'none';
 
 
 /**
@@ -41,65 +61,125 @@ export type AtEndConfig =
   | undefined;
 
 
-  /**
+/**
  * @category Props
- * @description Props for a child component within a flow.
- * @template T - A generic type for the `extras` prop, allowing for custom data to be passed.
- * @property {string} name - The unique name of the child within its parent flow.
- * @property {React.ReactNode} page - The React component to render for this step.
- * @property {SizeType} [size='full'] - The size of the flow component.
- * @property {AnimationType} [animationType='slideBottom'] - The animation to use when this child is shown.
- * @property {boolean} [draggable=false] - If true, the user can drag the component (e.g., a bottom sheet).
- * @property {boolean} [dismissable=true] - If true, the user can dismiss the component (e.g., by swiping or pressing an overlay).
- * @property {string} [title] - The title to display in the header.
- * @property {boolean} [noTitle] - If true, the title header will not be displayed.
- * @property {boolean} [canGoBack=true] - If true, a back button will be shown, allowing the user to navigate to the previous step.
- * @property {boolean} [shouldSwitch] - A flag to control switching behavior, if needed.
- * @property {T} [extras] - An object for any extra data you want to associate with this child.
- * @property {string} [background] - The background color or style for the component.
- * @property {(ctx: { from: string; opener?: string }) => Promise<boolean> | boolean} [onOpen] - A lifecycle hook that runs before the child is opened. Returning `false` will cancel the navigation.
- * @property {(dir: 'forward' | 'backward') => Promise<boolean> | boolean} [onSwitching] - A lifecycle hook that runs before switching to another child. Returning `false` will cancel the switch.
- * @property {(position: number) => void} [onDrag] - A callback that fires as the user drags a draggable component.
- * @property {() => void} [onClose] - A lifecycle hook that runs when the child is closed.
- * @property {React.ReactElement} [activityIndicator] - An optional custom activity indicator to show during async operations like `onOpen` or `onSwitching`.
+ * @description Base props for any flow parent.
  */
-export type FlowChildProps<T = Record<string, any>> = {
-  coverScreen?: boolean;
+export interface FlowBaseProps {
+  /** Unique name for the flow component */
   name: string;
-  page: React.ReactNode;
-  size?: SizeType;
-  animationType?: 'slideBottom' | 'slideTop' | 'slideLeft' | 'slideRight' | 'fade';
-  draggable?: boolean;
-  dismissable?: boolean;
-  title?: string;
-  noTitle?: boolean;
+  /** Child components */
+  children?: React.ReactNode;
+  /** Initial child to display (by name) */
+  initial?: string;
+  /** Configuration for what happens when flow reaches the end */
+  atEnd?: AtEndConfig;
+  /** If true, prevents navigation out of this flow */
+  isRestrictedOut?: boolean;
+  /** If true, prevents navigation into this flow */
+  isRestrictedIn?: boolean;
+  /** Timeout for lifecycle hooks in milliseconds */
+  lifecycleTimeoutMs?: number;
+  /** Theme for the flow */
+  theme?: FlowThemeType;
+  /** If true, state is shared between children */
+  shareState?: boolean;
+}
+
+/**
+ * @category Props
+ * @description Props specific to a Page flow.
+ */
+export interface FlowPageProps extends FlowBaseProps {
+  /** If false, removes back button (default: true) */
   canGoBack?: boolean;
+}
+
+/**
+ * @category Props
+ * @description Props specific to a Modal flow.
+ */
+export interface FlowModalProps extends FlowBaseProps {
+  /** Size of the modal */
+  size?: SizeType;
+  /** If true, modal can be dragged */
+  draggable?: boolean;
+  /** If true, modal can be dismissed by tapping outside */
+  dismissable?: boolean;
+  /** If true, modal covers the entire screen */
+  coverScreen?: boolean;
+}
+
+/**
+ * @category Props
+ * @description Base props for any child component.
+ */
+export interface FlowChildBaseProps<T = Record<string, any>> {
+  /** Unique name for the child */
+  name: string;
+  /** The React component to render */
+  page: React.ReactNode;
+  /** Title to display in header */
+  title?: string;
+  /** If true, hides the title/header */
+  noTitle?: boolean;
+  /** Animation type for this child */
+  animationType?: AnimationType;
+  /** If false, prevents switching from this child */
   shouldSwitch?: boolean;
-  extras?: T;
-  background?: string;
-  onOpen?: (ctx: {
-    from: string;
-    opener?: string;
-  }) => Promise<boolean> | boolean;
+  /** Lifecycle hook called when child is opened */
+  onOpen?: (ctx: { from: string; opener?: string }) => Promise<boolean> | boolean;
+  /** Lifecycle hook called when switching away from this child */
   onSwitching?: (dir: 'forward' | 'backward') => Promise<boolean> | boolean;
-  onDrag?: (position: number) => void;
+  /** Lifecycle hook called when child is closed */
   onClose?: () => void;
+  /** Extra data to pass to the child component */
+  extras?: T;
+  /** Background color for the child */
+  background?: string;
+  /** Custom activity indicator component */
   activityIndicator?: React.ReactElement;
-};
+  /** Element to display at the top */
+  topElement?: React.ReactNode;
+}
+
+/**
+ * @category Props
+ * @description Props for a child within a Page flow.
+ */
+export interface FlowPageChildProps<T = Record<string, any>> extends FlowChildBaseProps<T> {
+  /** If false, removes back button for this child (default: true) */
+  canGoBack?: boolean;
+}
+
+/**
+ * @category Props
+ * @description Props for a child within a Modal flow.
+ */
+export interface FlowModalChildProps<T = Record<string, any>> extends FlowChildBaseProps<T> {
+  /** Size of the modal child */
+  size?: SizeType;
+  /** If true, modal child can be dragged */
+  draggable?: boolean;
+  /** If true, modal child can be dismissed */
+  dismissable?: boolean;
+  /** If true, modal child covers the entire screen */
+  coverScreen?: boolean;
+  /** Callback when modal is dragged */
+  onDrag?: (position: number) => void;
+}
+
+/**
+ * @category Props
+ * @description Generic child props (for standalone Flow.FC)
+ */
+export type FlowChildProps<T = Record<string, any>> = FlowChildBaseProps<T>;
 
 /**
  * @category Configuration
  * @description Options for creating a new flow.
- * @property {FlowType} type - The type of flow to create ('modal' or 'page').
- * @property {boolean} [shareState=false] - If true, the state is shared across children of this flow.
- * @property {boolean} [isRestrictedIn=false] - If true, prevents navigating into this flow under certain conditions.
- * @property {boolean} [isRestrictedOut=false] - If true, prevents navigating out of this flow under certain conditions.
- * @property {string} [theme] - An optional theme name to apply to the flow.
- * @property {number} [lifecycleTimeoutMs=8000] - The timeout in milliseconds for lifecycle hooks like `onOpen` and `onSwitching`.
- * @property {AtEndConfig} [atEnd] - Configuration for what happens when the flow reaches its end.
  */
 export type FlowCreateOptions = {
-  type: FlowType;
   shareState?: boolean;
   isRestrictedIn?: boolean;
   isRestrictedOut?: boolean;
@@ -127,4 +207,46 @@ export type FlowTheme = {
   backButton?: ViewStyle;
   content?: ViewStyle;
   overlay?: ViewStyle;
+};
+
+/**
+ * @category State
+ * @description Represents a value stored in the flow state.
+ */
+export type FlowStateValue = any;
+
+/**
+ * @category State
+ * @description Configuration for setting state with advanced options.
+ */
+export type SetStateOptions = {
+  /**
+   * If provided, the state is stored under this category.
+   */
+  category?: string;
+  /**
+   * If provided, the state is encrypted/secured with this key.
+   */
+  secureKey?: string;
+  /**
+   * If true, the state is temporary and will be cleared on the next navigation switch.
+   */
+  temporary?: boolean;
+  /**
+   * If provided, the state is only accessible to children with these IDs (or 'hide' to hide from them).
+   * Note: This is a simplified implementation of "scoped sending".
+   */
+  scope?: string[];
+};
+
+/**
+ * @category State
+ * @description The internal structure of the flow state.
+ */
+export type FlowState = {
+  [key: string]: FlowStateValue;
+  __categories?: { [category: string]: { [key: string]: FlowStateValue } };
+  __secure?: { [key: string]: { value: string; iv?: string } }; // Mocking secure storage
+  __temp?: { [key: string]: boolean };
+  __scoped?: { [key: string]: string[] };
 };

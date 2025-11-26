@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   Animated,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -42,7 +43,8 @@ const ProcessingPaymentScreen = () => {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <ActivityIndicator size={80} color={theme.colors.primary} />
-        <Text style={styles.title}>Confirming your payment...</Text>
+        <Text style={ styles.title }>Confirming your payment...</Text>
+        
         <Text style={styles.subtitle}>
           Please wait while we confirm receipt. This may take a moment.
         </Text>
@@ -63,18 +65,26 @@ const ProcessingPaymentScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'white',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
+    backgroundColor: theme.colors.background
   },
   content: {
     alignItems: 'center',
+    backgroundColor: theme.colors.secondary,
+    
+    width: '95%',
+    height: Dimensions.get('screen').height - 200,
+    padding: 15,
+    paddingTop:100,
+    borderRadius: 20,
+    alignSelf: 'center'
   },
   title: {
-    fontSize: 24,
+    fontSize: 35,
     fontWeight: 'bold',
-    marginTop: 16,
+    marginTop: 100,
     textAlign: 'left',
     alignSelf: 'center',
   },
@@ -82,14 +92,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: 'gray',
     textAlign: 'center',
-    marginTop: 8,
+    marginTop: 50,
   },
   progressContainer: {
     width: '80%',
     height: 8,
     backgroundColor: theme.colors.primaryTrans,
     borderRadius: 50,
-    marginTop: 16,
+    marginTop: 50,
   },
   progressBar: {
     height: '100%',

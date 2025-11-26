@@ -10,6 +10,7 @@ import TermsPage from '../screens/auth/Terms';
 import RolePage from '../screens/auth/ChooseRole';
 import UserNameScreen from '../screens/auth/UserNameScreen';
 import ForgotPasswordScreen from 'screens/auth/ForgotPasswordScreen';
+import OTPScreen from 'screens/auth/OtpPage';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
@@ -42,6 +43,11 @@ const AuthNavigator: React.FC = () => {
       <Stack.Screen
         name="userName"
         component={UserNameScreen as React.ComponentType<any>}
+      />
+
+      <Stack.Screen
+        name="otp"
+        component={OTPScreen as React.ComponentType<any>}
       />
 
        <Stack.Screen

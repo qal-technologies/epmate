@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { PaperProvider } from 'react-native-paper';
-import { Provider, useSelector } from 'react-redux';
+import { Provider } from 'react-redux';
 import { store } from './src/state/store';
 import AppRootNavigator from './src/navigation/AppRootNavigator';
 import { NavigationContainer } from '@react-navigation/native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 const App = () => {
   return (
@@ -18,7 +17,7 @@ const Root = () => {
   return (
     <PaperProvider>
       <NavigationContainer>
-          <AppRootNavigator />
+        <AppRootNavigator />
       </NavigationContainer>
     </PaperProvider>
   );

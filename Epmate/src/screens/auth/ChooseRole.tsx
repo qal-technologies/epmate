@@ -21,7 +21,7 @@ type Props = {
   navigation?: RoleScreenProp;
 };
 
-const RolePage: React.FC<Props> = ({}) => {
+const RolePage: React.FC<Props> = ({navigation, userId}) => {
   const [userRole, setUserRole] = useState('user');
 
   const roles = [
@@ -29,7 +29,7 @@ const RolePage: React.FC<Props> = ({}) => {
       name: 'user',
       title: 'Get Help',
       info: 'Find someone trusted to assist you with your needs',
-      icon: 'person-search',
+      icon: 'location-pin',
     },
     {
       name: 'helper',
@@ -40,7 +40,6 @@ const RolePage: React.FC<Props> = ({}) => {
   ];
 
   const dispatch = useDispatch();
-  const navigation = useNavigation<any>();
   
   const handleRoleSelection = async () => {
     if (userRole) {
@@ -48,21 +47,24 @@ const RolePage: React.FC<Props> = ({}) => {
       //   .addDocument('users', { userId: { role: userRole } })
       //   .then(() => {
       dispatch(login({ role: userRole }));
-      navigation.navigate('Home');
+      if (userRole == 'user') navigation.navigate('userName', {userId})
+      else navigation.navigate('Home');
         // });
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>How would you like to Epmate?</Text>
+      <Text style={styles.title}>How would you like to use Epmate?</Text>
 
       {roles.map(role => {
         return (
           <RadioBtn
             key={role.name}
             value={role.name}
-            description={role.title}
+            description={role.info}
+            title={role.title}
+            icon={role.icon}
             setSelected={value => setUserRole(value)}
             selected={role.name == userRole}
           />
@@ -100,7 +102,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: theme.colors.background,
+    backgroundColor: theme.colors.secondary,
   },
   title: {
     fontSize: 25,

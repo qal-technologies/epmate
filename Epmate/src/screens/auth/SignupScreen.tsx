@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Image, ScrollView } from 'react-native';
+import { View, StyleSheet, Image, ScrollView, Alert } from 'react-native';
 import {
   TextInput,
   Button,
@@ -17,8 +17,8 @@ import { db, firebaseFirestore } from '../../utils/firebaseFirestore';
 import TPView from '../../components/T&PView';
 import Banner from '../../components/UpperBanner';
 import AuthBtn from '../../components/AuthButton';
-import { useNavigation } from '@react-navigation/native';
 import MyInput from 'components/myInput';
+import useOtp from 'hooks/useOtp';
 
 type SignupScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -31,14 +31,31 @@ type Props = {
 
 const SignupScreen: React.FC<Props> = ({ navigation }) => {
   const [loading, setLoading] = useState<boolean>(false);
+  const [phoneNumber, setNumber] = useState('');
 
   const handleSignup = async () => {
     setLoading(true);
     try {
-      navigation.navigate('userName', { userId: '12345' });
+
+      const normalizeNumber = () => {
+        if (phoneNumber && phoneNumber.trim().length == 11) {
+          let newNumber: string = phoneNumber;
+          const trimmable = newNumber.startsWith('0');
+
+          if (trimmable) newNumber.slice(1);
+          const toInt = parseInt(newNumber);
+          return toInt as any;
+        }
+        return phoneNumber as any;
+      }
+
+      setTimeout(() => {
+        useOtp({ id: '12345', destination: normalizeNumber() }, navigation, 4);
+
+        setLoading(false);
+      }, 4000);
     } catch (error: any) {
       console.error('Signup error:', error.message || error);
-    } finally {
       setLoading(false);
     }
   };
@@ -49,7 +66,6 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
       scrollToOverflowEnabled
       scrollEnabled
       contentContainerStyle={{
-        justifyContent: 'center',
         paddingBottom: 10,
       }}
     >
@@ -62,17 +78,17 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
       </View>
 
       <View style={{ paddingHorizontal: 15 }}>
-        <MyInput type="mobile" />
+        <MyInput type="mobile" value={phoneNumber} setValue={setNumber} />
 
         <AuthBtn
           loading={loading}
           loadingText="Sending code..."
           btnText="Continue"
           onClick={handleSignup}
+          disabled={phoneNumber.trim().length < 10}
           btnMode="contained"
           btnStyle="solid"
           mv
-          rounded
         />
 
         <TPView navigation={navigation} />
@@ -84,7 +100,7 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: theme.colors.secondary,
     textAlign: 'center',
   },
   title: {

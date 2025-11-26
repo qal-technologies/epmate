@@ -50,7 +50,7 @@ const HelpModal= ({ visible, onDismiss }:HelpModalProps) => {
         onDismiss={onDismiss}
         contentContainerStyle={[
           styles.container,
-          { backgroundColor: theme.colors.background }, // use theme
+          { backgroundColor: theme.colors.secondary },
         ]}
       >
         <Text style={[styles.title, { color: theme.colors.text }]}>

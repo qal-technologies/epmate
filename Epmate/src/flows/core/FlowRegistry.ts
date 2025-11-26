@@ -41,6 +41,9 @@ class FlowRegistry {
   // children lookup: parentId -> childIds[]
   private tree: Map<string, string[]> = new Map();
 
+  // listeners for registry changes
+  private listeners: Set<() => void> = new Set();
+
   private constructor() {
     this.currentChild = {};
     this.parentOf = {};
@@ -102,6 +105,7 @@ class FlowRegistry {
     // Create children storage
     this.tree.set(id, []);
 
+    this.notify();
     return newNode;
   }
 
@@ -124,7 +128,9 @@ class FlowRegistry {
     children.forEach(childId => this.unregisterNode(childId));
 
     this.tree.delete(id);
+    this.tree.delete(id);
     this.nodes.delete(id);
+    this.notify();
   }
 
   /* GET NODE BY ID */
@@ -239,6 +245,23 @@ class FlowRegistry {
       nodes: Array.from(this.nodes.values()),
       tree: Array.from(this.tree.entries()),
     };
+  }
+
+  /* SUBSCRIPTION */
+  public subscribe(cb: () => void): () => void {
+    this.listeners.add(cb);
+    return () => {
+      this.listeners.delete(cb);
+    };
+  }
+
+  private notify() {
+    this.listeners.forEach(cb => cb());
+  }
+
+  /* GET ROOT NODES */
+  public getRoots(): FlowNode[] {
+    return Array.from(this.nodes.values()).filter(n => n.parentId === null);
   }
 }
 

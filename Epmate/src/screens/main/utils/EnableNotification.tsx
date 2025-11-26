@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Modal, View, Text, StyleSheet, Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 
-import RadioBtn from '../../components/SelectBtn';
-import AuthBtn from '../../components/AuthButton';
+import RadioBtn from '../../../components/SelectBtn';
+import AuthBtn from '../../../components/AuthButton';
 import { MaterialIcons } from '@expo/vector-icons';
 import { theme } from 'theme/theme';
 // Removed unused theme import

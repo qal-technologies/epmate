@@ -197,9 +197,10 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 8,
+    textAlign:'left',
   },
   detailContainer: {
     flexDirection: 'row',
@@ -234,8 +235,9 @@ const styles = StyleSheet.create({
   },
   importantNote: {
     fontSize: 14,
-    color: 'red',
-    marginTop: 8,
+    color: 'gray',
+    opacity:.8,
+    marginTop: 18,
   },
   paidButton: {
     backgroundColor: theme.colors.primary,

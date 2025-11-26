@@ -18,10 +18,12 @@ import { theme } from 'theme/theme';
 interface Props {
   onServiceSelect: () => void;
   setCurrentService: (service: string) => void;
+  isSearching: boolean;
 }
 
 const ServiceSelectionModal: React.FC<Props> = ({
   onServiceSelect,
+  isSearching,
   setCurrentService,
 }) => {
   const services: {
@@ -29,16 +31,16 @@ const ServiceSelectionModal: React.FC<Props> = ({
     icon: IconProps | string;
     serviceKey: string;
   }[] = [
-    { name: 'Errands & Delivery', icon: 'briefcase', serviceKey: 'errand' },
-    { name: 'House Chores', icon: 'home-lightbulb', serviceKey: 'chores' },
-    { name: 'Cooking', icon: 'chef-hat', serviceKey: 'cooking' },
-    {
-      name: 'Home Repairs & Technical Help',
-      icon: 'toolbox',
-      serviceKey: 'repairs',
-    },
-    { name: 'Project & Assignments', icon: 'pen', serviceKey: 'projects' },
-  ];
+      { name: 'Errands & Delivery', icon: 'briefcase', serviceKey: 'errand' },
+      { name: 'House Chores', icon: 'broom', serviceKey: 'chores' },
+      { name: 'Cooking', icon: 'chef-hat', serviceKey: 'cooking' },
+      {
+        name: 'Home Repairs & Technical Help',
+        icon: 'tools',
+        serviceKey: 'repairs',
+      },
+      { name: 'Projects & Assignments', icon: 'pen', serviceKey: 'projects' },
+    ];
 
   const [selectedService, setSelectedService] = useState('');
 
@@ -61,7 +63,7 @@ const ServiceSelectionModal: React.FC<Props> = ({
   };
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, isSearching && { display: 'none' }]}
       contentContainerStyle={{
         paddingBottom: 20,
       }}

@@ -1,7 +1,9 @@
 import React from 'react';
 import { View, StyleSheet, Dimensions, ActivityIndicator, Modal } from 'react-native';
 import { flowRegistry } from './core/FlowRegistry';
-import { useFlow } from './core/FlowInstance';
+import { useFlowRuntime } from './core/FlowRuntime';
+import { useFlowNav } from './hooks/useFlowNav';
+import { FlowProvider } from './core/FlowProvider';
 import Reanimated, {
   useSharedValue,
   useAnimatedStyle,
@@ -15,12 +17,8 @@ import BottomSheet, {
 import { MaterialIcons } from '@expo/vector-icons';
 import { theme } from '../theme/theme';
 import { TouchableRipple, Text } from 'react-native-paper';
-import {} from './core/Wrappers/FlowPage'
-import {ModalFlow} from './core/Wrappers/FlowModal';
-
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
-// ... (helper functions and types remain the same)
 function sizeToSnapPoints(size?: string) {
   switch (size) {
     case 'full':
@@ -35,7 +33,7 @@ function sizeToSnapPoints(size?: string) {
 }
 
 type FlowInjected = {
-  api: ReturnType<typeof useFlow>;
+  api: ReturnType<typeof useFlowRuntime>;
   parentId: string;
   childId: string;
   flags: { opening: boolean; switching: boolean; dragging: boolean };
@@ -58,19 +56,20 @@ const OverlayPortal: React.FC<{ children: React.ReactNode }> = React.memo(
     );
   },
 );
+
 const FullScreenPageWrapper = React.memo(function FullScreenPageWrapper({
   parentId,
   childId,
   content,
   background,
-  runtime,
 }: {
   parentId: string;
   childId: string;
   content: React.ReactNode;
   background?: string;
-  runtime: ReturnType<typeof useFlow>;
 }) {
+  const runtime = useFlowRuntime();
+  const nav = useFlowNav(parentId);
   const node = flowRegistry.getNode(childId);
   const childProps = node?.props || {};
   const {
@@ -84,6 +83,7 @@ const FullScreenPageWrapper = React.memo(function FullScreenPageWrapper({
   const opacity = useSharedValue(0);
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
+  const scale = useSharedValue(1);
 
   React.useEffect(() => {
     runtime.onAnimationComplete(parentId, true);
@@ -101,6 +101,13 @@ const FullScreenPageWrapper = React.memo(function FullScreenPageWrapper({
       case 'slideRight':
         translateX.value = SCREEN_WIDTH;
         break;
+      case 'zoom':
+        scale.value = 0.3;
+        opacity.value = 0;
+        break;
+      case 'none':
+        // No animation
+        break;
       default:
         opacity.value = 0;
         break;
@@ -108,7 +115,8 @@ const FullScreenPageWrapper = React.memo(function FullScreenPageWrapper({
 
     opacity.value = withSpring(1);
     translateX.value = withSpring(0);
-    translateY.value = withSpring(0, {}, () => {
+    translateY.value = withSpring(0);
+    scale.value = withSpring(1, {}, () => {
       runtime.onAnimationComplete(parentId, false);
     });
 
@@ -142,6 +150,7 @@ const FullScreenPageWrapper = React.memo(function FullScreenPageWrapper({
     transform: [
       { translateX: translateX.value },
       { translateY: translateY.value },
+      { scale: scale.value },
     ],
   }));
 
@@ -151,16 +160,18 @@ const FullScreenPageWrapper = React.memo(function FullScreenPageWrapper({
   const api = runtime;
 
   const page = (
-    <FlowChildWrapper
-      flow={{
-        api: runtime,
-        parentId,
-        childId,
-        flags: runtime.getFlags(parentId),
-      }}
-    >
-      {content}
-    </FlowChildWrapper>
+    <FlowProvider parentId={parentId} childId={childId} flowId={parentId}>
+      <FlowChildWrapper
+        flow={{
+          api: runtime,
+          parentId,
+          childId,
+          flags: runtime.getFlags(parentId),
+        }}
+      >
+        {content}
+      </FlowChildWrapper>
+    </FlowProvider>
   );
 
   return (
@@ -176,7 +187,7 @@ const FullScreenPageWrapper = React.memo(function FullScreenPageWrapper({
         <View style={styles.header}>
           {canGoBack && !isFirstChild && (
             <View style={styles.headerRight}>
-              <TouchableRipple onPress={() => api.prev(parentId)}>
+              <TouchableRipple onPress={() => nav.prev()}>
                 <View style={styles.headerAction}>
                   <MaterialIcons
                     name="arrow-back"
@@ -214,7 +225,6 @@ const ModalBottomSheetWrapper = React.memo(function ModalBottomSheetWrapper({
   dismissable,
   background,
   content,
-  runtime,
 }: {
   parentId: string;
   childId: string;
@@ -223,8 +233,9 @@ const ModalBottomSheetWrapper = React.memo(function ModalBottomSheetWrapper({
   dismissable: boolean;
   background?: string;
   content: React.ReactNode;
-  runtime: ReturnType<typeof useFlow>;
 }) {
+  const runtime = useFlowRuntime();
+  const nav = useFlowNav(parentId);
   const ref = React.useRef<any>(null);
 
   // child props and header behavior
@@ -253,7 +264,7 @@ const ModalBottomSheetWrapper = React.memo(function ModalBottomSheetWrapper({
     (index: number) => {
       runtime.onAnimationComplete(parentId, false);
       if (index === -1) {
-        runtime.prev(parentId);
+        nav.prev();
         return;
       }
       const percent =
@@ -263,7 +274,7 @@ const ModalBottomSheetWrapper = React.memo(function ModalBottomSheetWrapper({
 
       runtime.onDragUpdate(parentId, percent);
     },
-    [parentId, runtime, normalizedSnapPoints],
+    [parentId, runtime, normalizedSnapPoints, nav],
   );
 
   const handlePresent = React.useCallback(() => {
@@ -301,7 +312,7 @@ const ModalBottomSheetWrapper = React.memo(function ModalBottomSheetWrapper({
         >
           {dismissable && (
             <View style={styles.headerRight}>
-              <TouchableRipple onPress={() => runtime.close(parentId)}>
+              <TouchableRipple onPress={() => nav.close()}>
                 <View style={styles.headerAction}>
                   <MaterialIcons
                     name="close"
@@ -323,16 +334,18 @@ const ModalBottomSheetWrapper = React.memo(function ModalBottomSheetWrapper({
       )}
 
       <View style={styles.bsContent}>
-        <FlowChildWrapper
-          flow={{
-            api: runtime,
-            parentId,
-            childId,
-            flags: runtime.getFlags(parentId),
-          }}
-        >
-          {content}
-        </FlowChildWrapper>
+        <FlowProvider parentId={parentId} childId={childId} flowId={parentId}>
+          <FlowChildWrapper
+            flow={{
+              api: runtime,
+              parentId,
+              childId,
+              flags: runtime.getFlags(parentId),
+            }}
+          >
+            {content}
+          </FlowChildWrapper>
+        </FlowProvider>
       </View>
       {(opening || switching) && (
         <View style={styles.activityIndicatorContainer}>
@@ -354,48 +367,71 @@ const ModalBottomSheetWrapper = React.memo(function ModalBottomSheetWrapper({
       handleComponent={draggable ? undefined : null}
       enablePanDownToClose={dismissable}
       backdropComponent={renderBackdrop}
-      onDismiss={() => runtime.prev(parentId)}
+      onDismiss={() => nav.prev()}
     >
       <View style={styles.bsContent}>{page}</View>
     </BottomSheetModal>
   );
 });
 
+// FINAL FlowNavigator - Renders properly with controlled updates
 const FlowNavigator: React.FC = () => {
-  const runtime = useFlow();
-  const [activeList, setActiveList] = React.useState<any[]>([]);
+  const runtime = useFlowRuntime();
+  const [updateTrigger, setUpdateTrigger] = React.useState(0);
+  const lastActiveIds = React.useRef<string>('');
 
   React.useEffect(() => {
-    const updateActiveFlows = () => {
-      const debug = flowRegistry.debugTree();
-      const parents = (debug.nodes || []).filter((n: any) => n.parentId === null);
-      const active = parents.map((p: any) => ({
-        parentNode: p,
-        activeNode: runtime.getActive(p.id),
-      }));
-      setActiveList(active);
+    const handleUpdate = () => {
+      // Get current active IDs
+      const parents = flowRegistry.getRoots();
+      const activeIds = parents
+        .map(p => runtime.getActive(p.id)?.id)
+        .filter(Boolean)
+        .join(',');
+      
+      // Only trigger update if active children actually changed
+      if (activeIds !== lastActiveIds.current) {
+        lastActiveIds.current = activeIds;
+        setUpdateTrigger(prev => prev + 1);
+      }
     };
 
-    const unsubscribe = flowRegistry.subscribe(updateActiveFlows);
-    updateActiveFlows();
+    const unsubscribe = flowRegistry.subscribe(handleUpdate);
+    handleUpdate(); // Initial update
 
-    return () => {
-      unsubscribe();
-    };
+    return () => unsubscribe();
   }, [runtime]);
+  
+  // Get active flows directly from registry
+  const parents = flowRegistry.getRoots();
+  console.log('[FlowNavigator] Roots:', parents.map(p => p.id));
+  
+  const activeFlows = parents
+    .map((p: any) => ({
+      parentNode: p,
+      activeNode: runtime.getActive(p.id),
+    }))
+    .filter(a => a.activeNode);
 
-  if (!activeList.some(a => a.activeNode)) return null;
+  console.log('[FlowNavigator] Active flows:', activeFlows.map(a => ({ parent: a.parentNode?.id, child: a.activeNode?.id })));
 
-  const rendered = activeList.map(({ parentNode, activeNode }) => {
+  if (activeFlows.length === 0) {
+    console.log('[FlowNavigator] No active flows, returning null');
+    return null;
+  }
+
+  const rendered = activeFlows.map(({ parentNode, activeNode }) => {
     if (!activeNode) return null;
+    
     const childProps = activeNode.props || {};
     const size = childProps.size || 'half';
     const draggable = !!childProps.draggable;
     const dismissable = childProps.dismissable !== false;
     const coverScreen = !!childProps.coverScreen;
-    const background =
-      childProps.background ||
-      (parentNode.props?.theme === 'dark' ? '#111' : '#fff');
+    
+    // Get theme from parent and convert to background color
+    const theme = parentNode.props?.theme || 'light';
+    const background = theme === 'dark' ? '#1a1a1a' : '#ffffff';
 
     let content;
     if (parentNode.type === 'modal') {
@@ -410,7 +446,6 @@ const FlowNavigator: React.FC = () => {
           dismissable={dismissable}
           background={background}
           content={activeNode.props?.page ?? null}
-          runtime={runtime}
         />
       );
     } else {
@@ -421,7 +456,6 @@ const FlowNavigator: React.FC = () => {
           childId={activeNode.id}
           content={activeNode.props?.page ?? null}
           background={background}
-          runtime={runtime}
         />
       );
     }

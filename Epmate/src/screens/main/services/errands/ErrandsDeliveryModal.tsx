@@ -25,13 +25,13 @@ const ErrandsDeliveryModal: React.FC<Props> = ({
       name: 'pickup',
       title: 'Pick up and deliver',
       icon: 'truck',
-      info: 'Helper goes to your pick up location and get something for you',
+      info: 'Helper goes to pickup your item and brings it to you.',
     },
     {
       name: 'buy',
       title: 'Buy and deliver',
       icon: 'money',
-      info: 'Helper goes to your buy location and buys your needs',
+      info: 'Helper goes to buy item for you and brings it to you.',
     },
   ];
 
@@ -53,7 +53,7 @@ const ErrandsDeliveryModal: React.FC<Props> = ({
         contentContainerStyle={styles.modal}
         dismissableBackButton
       >
-        <Text style={styles.title}>What do you need?</Text>
+        <Text style={styles.title}>Choose the type of errand you want your helper to handle</Text>
 
         {errands.map(errand => {
           return (
@@ -64,7 +64,7 @@ const ErrandsDeliveryModal: React.FC<Props> = ({
               value={errand.name}
               selected={errand.name == errandSelected}
               setSelected={value => selectErrand(value)}
-              icon={errand.icon}
+              // icon={errand.icon}
               iconPack="Awesome"
               mv
             />
@@ -72,7 +72,7 @@ const ErrandsDeliveryModal: React.FC<Props> = ({
         })}
 
         <AuthBtn
-          btnText="Continue"
+          btnText="CONTINUE"
           btnMode="contained"
           btnStyle="solid"
           onClick={handleContinue}

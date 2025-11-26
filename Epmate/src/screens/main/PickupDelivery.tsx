@@ -4,6 +4,7 @@ import { TextInput, Provider, Text, Modal, Portal } from 'react-native-paper';
 import AuthBtn from '../../components/AuthButton';
 import { theme } from '../../theme/theme';
 import { useSelector } from 'react-redux';
+import MyInput from 'components/myInput';
 
 interface Props {
   visible: boolean;
@@ -60,27 +61,18 @@ const PickupDelivery: React.FC<Props> = ({
       >
         <View style={styles.container}>
           <Text style={styles.title}>Enter Locations</Text>
-          <TextInput
-            mode="outlined"
-            label="Pickup Location"
-            value={pickupLocation}
-            onChangeText={setPickupLocation}
-            style={styles.input}
+
+          <MyInput type='text' value={pickupLocation} setValue={setPickupLocation}
             placeholder="Your current location or address"
-            outlineColor={theme.colors.placeholder}
-            activeOutlineColor={theme.colors.primary}
-            placeholderTextColor={theme.colors.placeholder}
+            label='Pickup Location'
+            withLabel
+            selectionColor={theme.colors.primary}
           />
-          <TextInput
-            mode="outlined"
-            label="Delivery Location"
-            value={deliveryLocation}
-            onChangeText={setDeliveryLocation}
-            style={styles.input}
+
+          <MyInput type='text' value={deliveryLocation} setValue={setDeliveryLocation}
             placeholder="Enter delivery location"
-            outlineColor={theme.colors.placeholder}
-            activeOutlineColor={theme.colors.primary}
-            placeholderTextColor={theme.colors.placeholder}
+            label="Enter delivery Location"            withLabel
+            selectionColor={theme.colors.primary}
           />
 
           <AuthBtn
@@ -88,7 +80,7 @@ const PickupDelivery: React.FC<Props> = ({
             onClick={findHelper}
             btnMode="contained"
             btnStyle="solid"
-            btnText="Find Helper"
+            btnText="FIND HELPER"
             mv
             rounded
           />
@@ -104,7 +96,9 @@ const PickupDelivery: React.FC<Props> = ({
 const styles = StyleSheet.create({
   container: {
     padding: 20,
+    alignItems: 'center',
     flex: 1,
+    width:'100%',
   },
   modal: {
     backgroundColor: 'white',
@@ -114,7 +108,8 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 30,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginVertical:20,
+    marginBottom: 30,
     textAlign: 'center',
   },
   input: {

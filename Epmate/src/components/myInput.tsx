@@ -6,20 +6,28 @@ import {
   TextInput,
   TouchableOpacity,
   Text,
+  Dimensions,
 } from 'react-native';
 import { theme } from '../theme/theme';
-import Animated, { FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { MaterialIcons } from '@expo/vector-icons';
 
 type MyInputProps = TextInputProps & {
   containerStyle?: object;
-  type: 'mobile' | 'number' | 'email' | 'password' | 'text';
+  type: 'mobile' | 'number' | 'email' | 'password' | 'text' | 'otp';
   placeholder?: string;
   secureTextEntry?: boolean;
   rounded?: boolean;
   borderless?: boolean;
   activeColor?: string;
   inactiveColor?: string;
+  withLabel?: boolean;
+  label?: string;
+  centerUpper?: boolean;
+  labelNote?: string;
+  value: any;
+  upperMb?: number;
+  setValue: (state: any) => void;
 };
 
 const MyInput: React.FC<MyInputProps> = ({
@@ -28,15 +36,23 @@ const MyInput: React.FC<MyInputProps> = ({
   placeholder,
   secureTextEntry = false,
   rounded = false,
+  value,
+  setValue,
   borderless = false,
   activeColor = theme.colors.primary,
   inactiveColor = theme.colors.placeholder,
+  withLabel = false,
+  label = '',
+  labelNote,
+  centerUpper,
+  upperMb,
   ...rest
 }) => {
   const getKeyboardType = () => {
     switch (type) {
       case 'mobile':
       case 'number':
+      case 'otp':
         return 'numeric';
       case 'email':
         return 'email-address';
@@ -44,38 +60,83 @@ const MyInput: React.FC<MyInputProps> = ({
         return 'default';
     }
   };
+  const [focused, setFocused] = useState(false);
+  const gotten = numberNflag.find(
+    number => number.name == 'nigeria',
+  );
 
   return (
-    <Animated.View
-      entering={FadeInUp.springify()}
-      style={[styles.container, containerStyle]}
-    >
-      {type == 'mobile' ? (
-        <MobileInput
-          country={'nigeria'}
-          type="mobile"
-          {...rest}
-          placeholder={placeholder}
-          keyboardType={getKeyboardType()}
-          placeholderTextColor={inactiveColor}
-          selectionColor={activeColor}
-        />
-      ) : (
+    <View style={{
+      flexDirection: 'column', gap: 3, alignItems: 'flex-start',
+      marginVertical: 12
+    }}>
+      {withLabel && label &&
+        (<View style={[styles.upper, { marginBottom: upperMb ? upperMb : 10 }]}>
+          <Text style={[styles.label, centerUpper && { textAlign: 'center', alignSelf: 'center' }]}>{label}</Text>
+          {labelNote && <Text style={[styles.note, centerUpper && { textAlign: 'center', alignSelf: 'center' }]}>{labelNote}</Text>}
+        </View>
+        )
+      }
+
+      <Animated.View
+        entering={FadeIn.springify()}
+        style={[styles.container, containerStyle, rounded && styles.rounded,
+        borderless && styles.borderless,
+        focused && { borderColor: theme.colors.primary },
+        type === 'otp' && { width: '30%', maxWidth: 200 }
+        ]}
+      >
+        {type == 'mobile' && (
+          <View
+            style={{
+              backgroundColor: theme.colors.secondary,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: 50,
+              paddingHorizontal: 8,
+              paddingInlineStart: 14,
+              borderRightColor: focused ? theme.colors.primary : theme.colors.primaryTrans,
+              borderRightWidth: 1,
+              gap: 4,
+            }}
+          >
+            <Text>{gotten?.flag}</Text>
+            <TextInput
+              style={{
+                fontSize: 18,
+                fontWeight: 'bold',
+                color: theme.colors.text,
+              }}
+              value={gotten?.code}
+              editable={false}
+
+              onFocus={() => setFocused(!focused)}
+              onBlur={() => setFocused(!focused)}
+            />
+            <MaterialIcons name="arrow-drop-down" color={'black'} size={16} />
+          </View>
+        )}
+
         <TextInput
           style={[
             styles.input,
-            rounded && styles.rounded,
-            borderless && styles.borderless,
+            type === 'otp' && { textAlign: 'center', fontWeight: 'bold', fontSize: 18 }
           ]}
+          maxLength={type === 'otp' ? 4 : type == 'mobile' ? 11 : 50}
+          value={value}
+          onChangeText={(text) => setValue(text)}
           placeholder={placeholder}
           secureTextEntry={secureTextEntry}
           keyboardType={getKeyboardType()}
           placeholderTextColor={inactiveColor}
           selectionColor={activeColor}
+          onFocus={() => setFocused(!focused)}
+          onBlur={() => setFocused(!focused)}
           {...rest}
         />
-      )}
-    </Animated.View>
+      </Animated.View>
+    </View>
   );
 };
 
@@ -104,8 +165,6 @@ const numberNflag = [
 
 const MobileInput: React.FC<MyInputProps & { country?: string }> = ({
   country,
-  rounded,
-  borderless,
   placeholder,
   keyboardType,
   inactiveColor,
@@ -116,10 +175,10 @@ const MobileInput: React.FC<MyInputProps & { country?: string }> = ({
     number => number.name == country || 'nigeria',
   );
 
-  const { code, flag } = gotten;
   const [showDrop, setShowDrop] = useState(false);
+  const setCodeAndFlag = (value: any) => { };
+  const [focused, setFocused] = useState(false);
 
-  const setCodeAndFlag = (value: any) => {};
   return (
     <View
       style={{
@@ -141,15 +200,18 @@ const MobileInput: React.FC<MyInputProps & { country?: string }> = ({
           gap: 4,
         }}
       >
-        <Text>{flag}</Text>
+        <Text>{gotten?.flag}</Text>
         <TextInput
           style={{
             fontSize: 18,
             fontWeight: 'bold',
             color: theme.colors.text,
           }}
-          value={code}
+          value={gotten?.code}
           editable={false}
+
+          onFocus={() => setFocused(!focused)}
+          onBlur={() => setFocused(!focused)}
         />
         <MaterialIcons name="arrow-drop-down" color={'black'} size={16} />
       </View>
@@ -157,8 +219,6 @@ const MobileInput: React.FC<MyInputProps & { country?: string }> = ({
       <TextInput
         style={[
           styles.input,
-          rounded && styles.rounded,
-          borderless && styles.borderless,
         ]}
         placeholder={placeholder}
         keyboardType={keyboardType}
@@ -184,20 +244,43 @@ const MobileInput: React.FC<MyInputProps & { country?: string }> = ({
 
 const styles = StyleSheet.create({
   container: {
-    width: '100%',
-    marginVertical: 10,
+    width: Dimensions.get('window').width - 40,
+    maxWidth: 400,
+    flex: 1,
+    borderWidth: 1.5,
+    backgroundColor: theme.colors.secondary,
+    color: theme.colors.text,
+    borderColor: theme.colors.primaryTrans,
+    borderRadius: 10,
+    minHeight: 50,
+    maxHeight: 50,
+    overflow: 'hidden',
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+  },
+  upper: {
+    gap: 1,
+  },
+  label: {
+    fontSize: 25,
+    fontWeight: 'bold',
+    textAlign: 'left'
+  }, note: {
+    color: 'gray',
+    opacity: .98,
+    textAlign: 'left'
+
   },
   input: {
     height: 50,
-    borderColor: theme.colors.primary,
-    borderWidth: 1,
-    paddingHorizontal: 10,
+    flex: 1,
     fontSize: 16,
-    backgroundColor: theme.colors.secondary,
     color: theme.colors.text,
+    paddingHorizontal: 10,
   },
   rounded: {
-    borderRadius: 25,
+    borderRadius: 20,
   },
   borderless: {
     borderWidth: 0,

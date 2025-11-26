@@ -1,6 +1,6 @@
 // navigation/types.ts
 export type HomeStackParamList = {
-  Home: undefined;
+  Home: { userId?: string } | undefined;
   PickupDelivery: undefined;
   ErrandType: { visible: boolean } | undefined;
   TaskCompletion: undefined;
@@ -29,9 +29,12 @@ export type AuthStackParamList = {
   Signup: undefined;
   Terms: undefined;
   Policy: undefined;
-  Role: { userId?: string;} | undefined;
+  Role: { userId?: string; } | undefined;
   userName: { userId?: string } | undefined;
+  otp: { userId?: string; otp: number | string; mobile: number | string } | undefined;
   forgotPassword: { userId?: string } | undefined;
+  Home: { userId?: string } | undefined;
+
 };
 
 export type RootStackParamList = AuthStackParamList & {
