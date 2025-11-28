@@ -3,29 +3,31 @@ import AuthBtn from 'components/AuthButton';
 import RadioBtn from 'components/SelectBtn';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Dimensions,
-  Alert,
+View,
+Text,
+StyleSheet,
+ScrollView,
+TouchableOpacity,
+Dimensions,
+Alert,
+Modal,
 } from 'react-native';
-import { Button, RadioButton, TouchableRipple } from 'react-native-paper';
+import { Portal } from 'react-native-paper';
 import type { IconProps } from 'react-native-paper/lib/typescript/components/MaterialCommunityIcon';
+import Animated, { FadeIn, FadeInDown, FadeOutDown, SlideInDown, SlideOutDown } from 'react-native-reanimated';
+import { useDispatch, useSelector } from 'react-redux';
+import { setCurrentService } from 'state/slices/orderSlice';
 import { theme } from 'theme/theme';
 
 interface Props {
   onServiceSelect: () => void;
-  setCurrentService: (service: string) => void;
   isSearching: boolean;
 }
 
-const ServiceSelectionModal: React.FC<Props> = ({
+const ServiceSelectionModal: React.FC<Props> = ( {
   onServiceSelect,
   isSearching,
-  setCurrentService,
-}) => {
+} ) => {
   const services: {
     name: string;
     icon: IconProps | string;
@@ -42,20 +44,21 @@ const ServiceSelectionModal: React.FC<Props> = ({
       { name: 'Projects & Assignments', icon: 'pen', serviceKey: 'projects' },
     ];
 
-  const [selectedService, setSelectedService] = useState('');
+  const [ selectedService, setSelectedService ] = useState( '' );
+  const dispatch = useDispatch();
 
   const handleSelectClick = async () => {
     // when we create more function we add them here:
-    if (selectedService) {
+    if ( selectedService ) {
       const selectedServiceObj = services.find(
         service => service.name === selectedService,
       );
 
-      if (selectedServiceObj) {
-        if (selectedServiceObj.serviceKey != 'errand') {
-          Alert.alert('Coming soon... Please select another option');
+      if ( selectedServiceObj ) {
+        if ( selectedServiceObj.serviceKey != 'errand' ) {
+          Alert.alert( 'Coming soon...', 'Please select another option' );
         } else {
-          setCurrentService(selectedServiceObj.serviceKey);
+          dispatch( setCurrentService( selectedServiceObj.serviceKey ) );
           onServiceSelect();
         }
       }
@@ -63,18 +66,20 @@ const ServiceSelectionModal: React.FC<Props> = ({
   };
   return (
     <ScrollView
-      style={[styles.container, isSearching && { display: 'none' }]}
-      contentContainerStyle={{
+      style={ [ styles.container, isSearching && { display: 'none' } ] }
+      contentContainerStyle={ {
         paddingBottom: 20,
-      }}
+      } }
     >
-      <Text style={styles.title}>What do you need help with today?</Text>
+      <Text style={ styles.title }>What do you need help with today?</Text>
 
       <View>
-        {services.map(service => (
-          <TouchableOpacity
-            key={service.name}
-            style={[
+        { services.map( ( service, index ) => (
+          <Animated.View
+            entering={ FadeInDown.springify().delay( index * 100 ) }
+            exiting={ FadeOutDown.springify().delay( index * 100 ) }
+            key={ service.name }
+            style={ [
               styles.serviceButton,
               {
                 backgroundColor:
@@ -82,46 +87,45 @@ const ServiceSelectionModal: React.FC<Props> = ({
                     ? theme.colors.primaryTrans
                     : 'transparent',
               },
-            ]}
-            onPress={() => {
-              setCurrentService(service.name);
-              setSelectedService(service.name);
-            }}
+            ] }
+            onTouchEnd={ () => {
+              setSelectedService( service.name );
+            } }
           >
             <MaterialCommunityIcons
-              name={service.icon}
-              size={25}
-              color={theme.colors.primary}
+              name={ service.icon as any}
+              size={ 25 }
+              color={ theme.colors.primary }
             />
-            <Text style={{ fontWeight: 'bold', fontSize: 16 }}>
-              {service.name}
+            <Text style={ { fontWeight: 'bold', fontSize: 16 } }>
+              { service.name }
             </Text>
-          </TouchableOpacity>
-        ))}
+          </Animated.View>
+        ) ) }
       </View>
 
       <AuthBtn
         btnText="Continue"
-        disabled={selectedService === ''}
-        onClick={handleSelectClick}
+        disabled={ selectedService === '' }
+        onClick={ handleSelectClick }
         btnMode="contained"
         btnStyle="solid"
         rounded
-        style={{ marginTop: 10 }}
+        style={ { marginTop: 10 } }
         mv
       />
     </ScrollView>
   );
 };
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create( {
   container: {
-    // flex: 0.8,
     padding: 10,
     paddingTop: 30,
     borderStartStartRadius: 20,
     borderStartEndRadius: 20,
-    maxHeight: Dimensions.get('screen').height / 1.9,
+    maxHeight: Dimensions.get( 'screen' ).height / 1.9,
+    backgroundColor: theme.colors.secondary,
   },
   title: {
     fontSize: 24,
@@ -141,6 +145,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 10,
   },
-});
+} );
 
 export default ServiceSelectionModal;

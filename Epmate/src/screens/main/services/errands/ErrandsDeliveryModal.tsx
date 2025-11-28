@@ -1,24 +1,22 @@
 // components/ErrandsDeliveryModal.tsx
 import React, { useState } from 'react';
 import { Alert, StyleSheet, Text } from 'react-native';
-import { Modal, Portal, Button } from 'react-native-paper';
+import { Modal, Portal } from 'react-native-paper';
 import RadioBtn from '../../../../components/SelectBtn';
 import AuthBtn from '../../../../components/AuthButton';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../../../../navigation/types';
+import {useDispatch} from 'react-redux';
+import {setServiceType} from 'state/slices/orderSlice';
 
 interface Props {
   visible: boolean;
   onDismiss: () => void;
-  setErrandOption: (state?: any) => void;
 }
 
 const ErrandsDeliveryModal: React.FC<Props> = ({
   visible,
   onDismiss,
-  setErrandOption,
 }) => {
-  const [errandSelected, selectErrand] = useState<string | null>(null);
+  const [errandSelected, selectErrand] = useState<string>('pickup');
 
   const errands = [
     {
@@ -35,12 +33,15 @@ const ErrandsDeliveryModal: React.FC<Props> = ({
     },
   ];
 
+  const dispatch = useDispatch();
+
   const handleContinue = () => {
     if (errandSelected) {
       if (errandSelected == 'buy') {
         Alert.alert('Coming Soon');
-      } else {
-        setErrandOption(errandSelected);
+      } else
+      {
+        dispatch(setServiceType(errandSelected));
         onDismiss();
       }
     }

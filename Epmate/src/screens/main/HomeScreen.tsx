@@ -1,35 +1,21 @@
 // screens/main/HomeScreen.tsx
 import React, { useRef, useEffect, useState } from 'react';
-import { StyleSheet, View, Alert, StatusBar } from 'react-native';
+import { StyleSheet, View, StatusBar } from 'react-native';
 import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useNavigation } from '@react-navigation/native';
-import { IconButton, Text } from 'react-native-paper';
+import { IconButton } from 'react-native-paper';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useSelector } from 'react-redux';
 import { theme } from 'theme/theme';
 
 interface Props {
-  userId?: string | null;
-  currentService?: string | null;
+  isSearching?: boolean;
 }
 
-const HomeScreen: React.FC<Props> = ({ userId, currentService }) => {
+const HomeScreen: React.FC<Props> = ({isSearching }) => {
   const navigation = useNavigation<any>();
-  const mapRef = useRef<MapView>(null);
-  const storedUserId = useSelector((state: any) => state.auth.user?.id);
-  const [isHelperListVisible, setIsHelperListVisible] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
-
-  // Check userId on mount
-  useEffect(() => {
-    const idToUse = userId || storedUserId;
-    if (!idToUse) {
-      Alert.alert('Unauthorized', 'Please login first.');
-      navigation.replace('Login');
-    }
-  }, [userId, storedUserId, navigation]);
-
+  const mapRef = useRef<MapView>( null );
+  
   // Animate map if searching
   useEffect(() => {
     if (isSearching && mapRef.current) {
@@ -43,9 +29,8 @@ const HomeScreen: React.FC<Props> = ({ userId, currentService }) => {
         1000,
       );
     }
-  }, [isSearching]);
-  const hideHelperList = () => setIsHelperListVisible(false);
-
+  }, [ isSearching ] );
+  
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <StatusBar translucent backgroundColor={'transparent'} />
@@ -81,7 +66,7 @@ const styles = StyleSheet.create({
   menuButton: {
     position: 'absolute',
     top: 40,
-    left: 10,
+    left: 8,
     zIndex: 1,
     backgroundColor: theme.colors.secondary,
   },

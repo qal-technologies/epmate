@@ -6,6 +6,7 @@ export const theme = {
     background: '#F6F6F6',
     text: '#000000',
     placeholder: '#BDBDBD',
+    accent:'orange'
   },
   fonts: {
     regular: 'Agrandir-Regular',

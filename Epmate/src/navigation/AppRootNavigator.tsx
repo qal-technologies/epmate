@@ -1,7 +1,7 @@
 // navigation/AppRootNavigator.tsx
 import React, { useEffect, useState } from 'react';
 import { View, ActivityIndicator } from 'react-native';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import AuthNavigator from './AuthNavigator';
 import AppNavigator from './AppNavigator';
 import { AppAuth, onAuthStateChanged } from '../utils/firebaseAuth';
@@ -10,15 +10,38 @@ import NotificationPermissionModal from '../screens/main/utils/EnableNotificatio
 import LocationPermissionModal from '../screens/main/utils/LocationPermissionModal';
 import SplashScreen from '../screens/SplashScreen';
 
+/**
+ * Checks if user has completed their profile setup
+ * Profile is complete when user has both displayName and role
+ */
+const checkAuthAndUserProfile = ( authState: any ) =>
+{
+  const { isLoggedIn, user, role } = authState;
+
+  // If not logged in, navigate to auth
+  if ( !isLoggedIn )
+  {
+    return { showAuth: true, profileComplete: false };
+  }
+
+  // Check if profile is complete (has displayName and role)
+  const hasDisplayName = user?.displayName && user.displayName.trim().length > 0;
+  const hasRole = role !== null && role !== undefined;
+
+  const profileComplete = hasDisplayName && hasRole;
+
+  return { showAuth: false, profileComplete };
+};
+
 const AppRootNavigator: React.FC = () => {
   const dispatch = useDispatch();
-  const [isLoading, setIsLoading] = useState(true);
-  const [userLoggedIn, setUserLoggedIn] = useState<boolean>(false);
+  const [ isLoading, setIsLoading ] = useState( true );
   const [showLocationModal, setShowLocationModal] = useState(true);
   const [showNotificationModal, setShowNotificationModal] = useState(true);
   const [showSplash, setShowSplash] = useState(true);
-  const [roleSelected, setRoleSelected] = useState(false);
-  const [userId, setId] = useState('');
+
+  // Get auth state from Redux store
+  const authState = useSelector( ( state: any ) => state.auth );
 
   useEffect(() => {
     const splashTimeout = setTimeout(() => {
@@ -32,12 +55,14 @@ const AppRootNavigator: React.FC = () => {
     if (!showNotificationModal) {
       const unsubscribe = onAuthStateChanged(AppAuth, user => {
         if (user) {
-          dispatch(login({ uid: user.uid, email: user.email ?? undefined }));
-          setId(userId);
-          setUserLoggedIn(true);
+          // User is authenticated - dispatch basic login info
+          // Additional profile data will come from OTP/Role/UserName screens
+          dispatch( login( {
+            id: user.uid,
+            mobile: user.phoneNumber ?? undefined
+          } ) );
         } else {
-          dispatch(logout());
-          setUserLoggedIn(false);
+          // dispatch( logout() );
         }
         setIsLoading(false);
       });
@@ -75,10 +100,18 @@ const AppRootNavigator: React.FC = () => {
     );
   }
 
-  if (userLoggedIn) {
-    return <AuthNavigator />;
-  }
+  // Check authentication and profile status
+  const { showAuth, profileComplete } = checkAuthAndUserProfile( authState );
 
+  // If not logged in, show auth screens
+  if ( showAuth ) return <AuthNavigator />;
+  // if ( showAuth ) return <AuthNavigator />;
+
+  // If logged in but profile incomplete, show auth screens to complete profile
+  // The AuthNavigator will handle routing to userName/Role screens
+  if ( !profileComplete ) return <AuthNavigator />;
+
+  // User is logged in with complete profile - show main app
   return <AppNavigator />;
 };
 

@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Image, ScrollView, Alert } from 'react-native';
 import {
-  TextInput,
-  Button,
-  Text,
-  Divider,
-  HelperText,
+TextInput,
+Button,
+Text,
+Divider,
+HelperText,
 } from 'react-native-paper';
 import { useDispatch } from 'react-redux';
 import { firebaseAuth } from '../../utils/firebaseAuth';
@@ -29,75 +29,75 @@ type Props = {
   navigation: SignupScreenNavigationProp;
 };
 
-const SignupScreen: React.FC<Props> = ({ navigation }) => {
-  const [loading, setLoading] = useState<boolean>(false);
-  const [phoneNumber, setNumber] = useState('');
+const SignupScreen: React.FC<Props> = ( { navigation } ) => {
+  const [ loading, setLoading ] = useState<boolean>( false );
+  const [ phoneNumber, setNumber ] = useState( '' );
 
   const handleSignup = async () => {
-    setLoading(true);
+    setLoading( true );
     try {
 
       const normalizeNumber = () => {
-        if (phoneNumber && phoneNumber.trim().length == 11) {
+        if ( phoneNumber && phoneNumber.trim().length == 11 ) {
           let newNumber: string = phoneNumber;
-          const trimmable = newNumber.startsWith('0');
+          const trimmable = newNumber.startsWith( '0' );
 
-          if (trimmable) newNumber.slice(1);
-          const toInt = parseInt(newNumber);
+          if ( trimmable ) newNumber.slice( 1 );
+          const toInt = parseInt( newNumber );
           return toInt as any;
         }
         return phoneNumber as any;
-      }
+      };
 
-      setTimeout(() => {
-        useOtp({ id: '12345', destination: normalizeNumber() }, navigation, 4);
+      setTimeout( () => {
+        useOtp( { id: '12345', destination: normalizeNumber() }, navigation, 4 );
 
-        setLoading(false);
-      }, 4000);
-    } catch (error: any) {
-      console.error('Signup error:', error.message || error);
-      setLoading(false);
+        setLoading( false );
+      }, 4000 );
+    } catch ( error: any ) {
+      console.error( 'Signup error:', error.message || error );
+      setLoading( false );
     }
   };
 
   return (
     <ScrollView
-      style={styles.container}
+      style={ styles.container }
       scrollToOverflowEnabled
       scrollEnabled
-      contentContainerStyle={{
+      contentContainerStyle={ {
         paddingBottom: 10,
-      }}
+      } }
     >
       <Banner />
-      <Text style={styles.title}>Enter your phone number</Text>
-      <View style={{ alignItems: 'center', marginBottom: 20 }}>
-        <Text style={styles.sub}>
+      <Text style={ styles.title }>Enter your phone number</Text>
+      <View style={ { alignItems: 'center', marginBottom: 20 } }>
+        <Text style={ styles.sub }>
           We'll send you a verification code on your WhatsApp.
         </Text>
       </View>
 
-      <View style={{ paddingHorizontal: 15 }}>
-        <MyInput type="mobile" value={phoneNumber} setValue={setNumber} />
+      <View style={ { paddingHorizontal: 15 } }>
+        <MyInput type="mobile" value={ phoneNumber } setValue={ setNumber } disabled={ loading } />
 
         <AuthBtn
-          loading={loading}
+          loading={ loading }
           loadingText="Sending code..."
           btnText="Continue"
-          onClick={handleSignup}
-          disabled={phoneNumber.trim().length < 10}
+          onClick={ handleSignup }
+          disabled={ phoneNumber.trim().length < 10 }
           btnMode="contained"
           btnStyle="solid"
           mv
         />
 
-        <TPView navigation={navigation} />
+        <TPView navigation={ navigation } />
       </View>
     </ScrollView>
   );
 };
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create( {
   container: {
     flex: 1,
     backgroundColor: theme.colors.secondary,
@@ -153,6 +153,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'none',
     color: 'black',
   },
-});
+} );
 
 export default SignupScreen;

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { TextInput, Button, Text } from 'react-native-paper';
-import { useDispatch } from 'react-redux';
+import {useDispatch,useSelector} from 'react-redux';
 import { db, firebaseFirestore } from '../../utils/firebaseFirestore';
-import { login } from '../../state/slices/authSlice';
+import {updateUserProfile} from '../../state/slices/authSlice';
 import { theme } from '../../theme/theme';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
@@ -16,18 +16,32 @@ type UserNameScreenProps = NativeStackScreenProps<
 >;
 
 const UserNameScreen: React.FC<UserNameScreenProps> = ({
-  route,
   navigation,
 }) => {
-  const { userId: uid } = route.params || {};
   const [name, setName] = useState('');
   const dispatch = useDispatch();
+  const authState = useSelector((state: any) => state.auth);
 
-  const handleSaveName = async () => {
+  const handleSaveName = async () =>
+  {
     try {
-      // firebaseFirestore.updateDocument('users', uid, { displayName: name });
-      dispatch(login({ uid, displayName: name }));
-      navigation.navigate('Home');
+      // Check if user already has a role
+      const hasRole = authState.role !== null && authState.role !== undefined;
+      // Update displayName in Redux store
+      dispatch(updateUserProfile({displayName: name}));
+
+      // TODO: Save to Firestore
+      // await firebaseFirestore.updateDocument('users', uid, { displayName: name });
+
+      if (hasRole)
+      {
+        // Profile is complete (has both displayName and role)
+        // AppRootNavigator will automatically navigate to Main
+      } else
+      {
+        // User needs to select a role
+        navigation.navigate('Role');
+      }
     } catch (error: any) {
       console.error('Error saving name:', error.message || error);
     }
@@ -37,9 +51,17 @@ const UserNameScreen: React.FC<UserNameScreenProps> = ({
     <View style={styles.container}>
 
       <View>
-        <MyInput type='text' value={name} setValue={setName} label='Enter Your Full Name' labelNote='This is just your display name and can be changed from the app settings' upperMb={5} selectionColor={theme.colors.primary} withLabel />
+        <MyInput
+          type='text'
+          value={name}
+          setValue={setName}
+          label='Enter Your Full Name'
+          upperMb={5}
+          selectionColor={theme.colors.primary}
+          withLabel
+        />
       </View>
-      
+
       <AuthBtn
         btnMode="contained"
         btnStyle="solid"
@@ -55,9 +77,9 @@ const UserNameScreen: React.FC<UserNameScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems:'center',
+    alignItems: 'center',
     padding: 20,
-    paddingTop:80,
+    paddingTop: 80,
     backgroundColor: theme.colors.secondary,
   },
   title: {

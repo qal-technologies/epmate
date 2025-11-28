@@ -1,59 +1,69 @@
 // navigation/CustomDrawerContent.tsx
-import React, { useEffect, useState } from 'react';
-import {
+import React,{useEffect,useState} from 'react';
+import
+{
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   Animated,
 } from 'react-native';
-import {
+import
+{
   DrawerContentScrollView,
   DrawerItemList,
   DrawerContentComponentProps,
 } from '@react-navigation/drawer';
-import { Avatar, Divider } from 'react-native-paper';
-import { useSelector } from 'react-redux';
+import {Avatar,Divider} from 'react-native-paper';
+import {useSelector} from 'react-redux';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useUserRating } from '../hooks/useUserRating';
-import { MaterialIcons } from '@expo/vector-icons';
-import { theme } from '../theme/theme';
+import {useUserRating} from '../hooks/useUserRating';
+import {MaterialIcons} from '@expo/vector-icons';
+import {theme} from '../theme/theme';
 
-const CustomDrawerContent: React.FC<DrawerContentComponentProps> = props => {
-  const [isHelperBoxVisible, setIsHelperBoxVisible] = useState(true);
+const CustomDrawerContent: React.FC<DrawerContentComponentProps> = props =>
+{
+  const [isHelperBoxVisible,setIsHelperBoxVisible] = useState(true);
   const fadeAnim = new Animated.Value(1);
-  const { rating, isLoading, isError } = useUserRating();
-  const { user } = useSelector((state: any) => state.auth);
+  const {rating,isLoading,isError} = useUserRating();
+  const {user} = useSelector((state: any) => state.auth);
 
   const userName =
-    (user && (user.name || user.displayName || user.email)) ?? 'User';
+    (user && (user.name || user.displayName)) ?? 'User';
 
-  useEffect(() => {
-    const loadHelperVisibility = async () => {
+  useEffect(() =>
+  {
+    const loadHelperVisibility = async () =>
+    {
       const value = await AsyncStorage.getItem('helperButtonVisible');
-      // if (value === 'false') setIsHelperBoxVisible(false);
-      await AsyncStorage.setItem('helperButtonVisible', 'false');
+      if (value === 'false') setIsHelperBoxVisible(false);
+      await AsyncStorage.setItem('helperButtonVisible','false');
     };
     loadHelperVisibility();
-  }, []);
+  },[]);
 
-  const removeHelperButton = async () => {
-    Animated.timing(fadeAnim, {
+  const removeHelperButton = async () =>
+  {
+    Animated.timing(fadeAnim,{
       toValue: 0,
       duration: 300,
       useNativeDriver: true,
+      isInteraction: true
     }).start(() => setIsHelperBoxVisible(false));
-    await AsyncStorage.setItem('helperButtonVisible', 'false');
+    await AsyncStorage.setItem('helperButtonVisible','false');
   };
 
-  const openHelperRegistration = () => {
-    props.navigation.navigate('RegisterHelper');
+  const openHelperRegistration = () =>
+  {
+    // TODO: Add RegisterHelper screen to navigator
+    // props.navigation.navigate('RegisterHelper');
+    console.warn('RegisterHelper screen not implemented yet');
   };
 
-  
-  
+
+
   return (
-    <DrawerContentScrollView {...props} contentContainerStyle={{ flex: 1 }}>
+    <DrawerContentScrollView {...props} contentContainerStyle={{flex: 1}}>
       <View style={styles.userInfoSection}>
         <TouchableOpacity
           style={{
@@ -68,7 +78,7 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = props => {
             size={60}
             icon="account"
             color={theme.colors.primary}
-            style={{ backgroundColor: theme.colors.primaryTrans }}
+            style={{backgroundColor: theme.colors.primaryTrans}}
           />
           <View>
             <Text style={styles.userName}>{userName}</Text>
@@ -92,11 +102,11 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = props => {
         </View>
       </View>
 
-      <Divider style={{ marginBottom: 20 }} />
+      <Divider style={{marginBottom: 20}} />
 
       <DrawerItemList {...props} />
 
-      {isHelperBoxVisible && (
+      {isHelperBoxVisible || user.role == 'user' && (
         <Animated.View
           style={{
             opacity: fadeAnim,
@@ -113,15 +123,15 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = props => {
               padding: 12,
               borderRadius: 15,
               borderWidth: 1,
-              borderColor:theme.colors.primary,
+              borderColor: theme.colors.primaryTrans,
               width: '100%',
               display: 'flex',
-              flexDirection:'column',
+              flexDirection: 'column',
             }}
           >
             <Text style={styles.helperButtonTitle}>Become a Helper</Text>
             <Text style={styles.helperButtonText}>Help others and earn money at your own schedule</Text>
-            <TouchableOpacity onPress={removeHelperButton} style={{position:'absolute', top:7, right:7}}>
+            <TouchableOpacity onPress={removeHelperButton} style={{position: 'absolute',top: 7,right: 7}}>
               <MaterialIcons name="close" size={20} color={theme.colors.placeholder} />
             </TouchableOpacity>
           </TouchableOpacity>
@@ -160,7 +170,7 @@ const styles = StyleSheet.create({
   },
   helperButtonTitle: {
     fontSize: 18,
-    marginBottom:2,
+    marginBottom: 2,
     fontWeight: 'bold',
   },
   helperButtonText: {

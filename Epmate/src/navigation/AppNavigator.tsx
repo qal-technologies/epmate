@@ -13,7 +13,7 @@ import PaymentScreen from '../screens/main/pages/PaymentScreen';
 import MyTasksScreen from '../screens/main/pages/Tasks/MyTasksScreen';
 import SafetyScreen from '../screens/main/SafetyScreen';
 import CustomDrawerContent from './CustomDrawerContent';
-import { HomeStackParamList, MainTabParamList, DrawerParamList } from './types';
+import { HomeStackParamList, MainTabParamList, DrawerParamList, RootStackParamList } from './types';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { MaterialIcons } from '@expo/vector-icons';
 import ErrandsDeliveryModal from '../screens/main/services/errands/ErrandsDeliveryModal';
@@ -24,151 +24,97 @@ import SearchingHelpersModal from '../screens/main/services/utils/SearchingHelpe
 import HelperListModal from '../screens/main/HelperListModal';
 import ServiceSelectionModal from '../screens/main/ServiceSelectionModal';
 import { theme } from 'theme/theme';
-import FlowImprovementSample from '../screens/sample/FlowImprovementSample';
-import HelpModal from 'components/HelpModal';
+import CallPage from 'screens/main/utils/CallPage';
+import LiveTracking from 'screens/main/utils/LiveTracking';
+import { StatusBar } from 'react-native';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const Stack = createNativeStackNavigator<HomeStackParamList>();
 const Drawer = createDrawerNavigator<DrawerParamList>();
+const RootStack = createNativeStackNavigator<RootStackParamList>();
 
 const HomeStack: React.FC = () => {
-  const [isSearching, setIsSearching] = useState(false);
-  const [showLocationModal, setShowLocationModal] = useState(false);
-  const [showErrandModal, setShowErrandModal] = useState(false);
-  const [showHelperListModal, setShowHelperListModal] = useState(false);
-  const [currentService, setCurrentService] = useState('');
-  const [errandOption, setErrandOption] = useState('');
-  const [locationData, setLocationData] = useState<any>({
-    pickupLocation: null,
-    deliveryLocation: null,
-    userId: null,
-  });
+  const [ isSearching, setIsSearching ] = useState( false );
+  const [ showLocationModal, setShowLocationModal ] = useState( false );
+  const [ showErrandModal, setShowErrandModal ] = useState( false );
+  const [ showHelperListModal, setShowHelperListModal ] = useState( false );
 
-  const handleFindHelpers = () => {
-    setShowLocationModal(false);
-    setIsSearching(true);
-  };
-
-  const handleHelpersFound = () => {
-    setIsSearching(false);
-    setShowHelperListModal(true);
-  };
+  StatusBar.setBarStyle( 'dark-content' );
+  StatusBar.setBackgroundColor( 'transparent' );
 
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <>
+      <Stack.Navigator screenOptions={ { headerShown: false } }>
+
       <Stack.Screen name="Main">
-        {(props: NativeStackScreenProps<HomeStackParamList, 'Home'>) => (
+          { ( props: NativeStackScreenProps<HomeStackParamList, 'Home'> ) => (
           <>
             <HomeScreen
-              {...(props as any)}
-              isSearching={isSearching}
-              currentService={currentService}
+                { ...( props as any ) }
+                isSearching={ isSearching }
             />
             <ServiceSelectionModal
-              isSearching={isSearching}
-              setCurrentService={setCurrentService}
-              onServiceSelect={() => setShowErrandModal(true)}
+                isSearching={ isSearching }
+                onServiceSelect={ () => setShowErrandModal( true ) }
             />
 
-            {showErrandModal && (
+              { ( showErrandModal ) && (
               <ErrandsDeliveryModal
-                setErrandOption={option => {
-                  setErrandOption(option);
-                  setShowLocationModal(true);
-                }}
-                visible={showErrandModal}
-                onDismiss={() => setShowErrandModal(false)}
+                  visible={ showErrandModal }
+                  onDismiss={ () => {
+                    setShowErrandModal( false );
+                    setShowLocationModal( true );
+                  } }
               />
-            )}
+              ) }
 
-            {showLocationModal && (
+              { ( showLocationModal ) && (
               <PickupDelivery
-                visible={showLocationModal}
-                onDismiss={() => setShowLocationModal(false)}
-                onFindHelpers={data => {
-                  setLocationData({
-                    pickupLocation: data.pickupLocation,
-                    deliveryLocation: data.deliveryLocation,
-                    userId: data.userId,
-                  });
-                  setShowLocationModal(false);
-                  setIsSearching(true);
-                }}
+                  visible={ showLocationModal }
+                  onDismiss={ () => {
+                    setShowLocationModal( false );
+                    setIsSearching( true );
+                  } }
               />
-            )}
-            {isSearching && (
+              ) }
+              { isSearching && (
               <SearchingHelpersModal
-                visible={isSearching}
-                onHelpersFound={() => {
-                  setIsSearching(false);
-                  setShowHelperListModal(true);
-                }}
+                  visible={ isSearching }
+                  onHelpersFound={ () => {
+                    setIsSearching( false );
+                    setShowHelperListModal( true );
+                  } }
               />
-            )}
-            {showHelperListModal && (
+              ) }
+              { showHelperListModal && (
               <HelperListModal
-                visible={showHelperListModal}
-                onDismiss={() => setShowHelperListModal(false)}
-                onAcceptHelper={helperData => {
-                  setShowHelperListModal(false);
-                  props.navigation.navigate('ConfirmOrder', {
-                    helperData,
-                    locationData,
-                  });
-                }}
+                  visible={ showHelperListModal }
+                  onDismiss={ () => {
+                    setShowHelperListModal( false );
+                    // Navigate to ConfirmOrder in RootStack
+                    props.navigation.navigate( 'ConfirmOrder' as any );
+                  } }
               />
-            )}
+              ) }
           </>
-        )}
-      </Stack.Screen>
-
-      <Stack.Screen name="ErrandType">
-        {(props: NativeStackScreenProps<HomeStackParamList, 'ErrandType'>) => (
-          <ErrandsDeliveryModal
-            {...(props as any)}
-            setIsSearching={setIsSearching}
-          />
-        )}
-      </Stack.Screen>
-
-      <Stack.Screen name="ConfirmOrder">
-        {(
-          props: NativeStackScreenProps<HomeStackParamList, 'ConfirmOrder'>,
-        ) => <ConfirmOrderScreen {...(props as any)} />}
-      </Stack.Screen>
-
-      <Stack.Screen name="ProcessingPayment">
-        {(
-          props: NativeStackScreenProps<
-            HomeStackParamList,
-            'ProcessingPayment'
-          >,
-        ) => <ProcessingPaymentScreen {...(props as any)} />}
-      </Stack.Screen>
-
-      <Stack.Screen name="CompletePayment">
-        {(
-          props: NativeStackScreenProps<HomeStackParamList, 'CompletePayment'>,
-        ) => <CompletePaymentScreen {...(props as any)} />}
+          ) }
       </Stack.Screen>
 
       <Stack.Screen
         name="TaskCompletion"
-        component={TaskCompletionScreen as React.ComponentType<any>}
+          component={ TaskCompletionScreen as React.ComponentType<any> }
       />
+
       <Stack.Screen
         name="Rating"
-        component={RatingScreen as React.ComponentType<any>}
+          component={ RatingScreen as React.ComponentType<any> }
       />
       <Stack.Screen
         name="Issue"
-        component={IssueScreen as React.ComponentType<any>}
-      />
-      <Stack.Screen
-        name="Payment"
-        component={PaymentScreen as React.ComponentType<any>}
+          component={ IssueScreen as React.ComponentType<any> }
       />
     </Stack.Navigator>
+    </>
   );
 };
 
@@ -176,104 +122,102 @@ const HomeStack: React.FC = () => {
 const MainTabs: React.FC = () => {
   return (
     <Tab.Navigator
-      screenOptions={{
+      screenOptions={ {
         headerShown: false,
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: 'gray',
-      }}
+
+      } }
     >
       <Tab.Screen
         name="Home"
-        component={HomeStack as React.ComponentType<any>}
-        options={{
-          tabBarIcon: ({ color, size }: any) => (
-            <MaterialIcons name="home" color={color} size={size} />
+        component={ HomeStack as React.ComponentType<any> }
+        options={ {
+          tabBarIcon: ( { color, size }: any ) => (
+            <MaterialIcons name="home" color={ color } size={ size } />
           ),
-        }}
+        } }
       />
 
       <Tab.Screen
         name="Profile"
-        component={ProfileScreen as React.ComponentType<any>}
-        options={{
-          tabBarIcon: ({ color, size }: any) => (
-            <MaterialIcons name="person" color={color} size={size} />
+        component={ ProfileScreen as React.ComponentType<any> }
+        options={ {
+          tabBarIcon: ( { color, size }: any ) => (
+            <MaterialIcons name="person" color={ color } size={ size } />
           ),
-        }}
+        } }
       />
     </Tab.Navigator>
   );
 };
 
-/** Drawer navigator - top-level app navigator after auth */
-const AppNavigator: React.FC = () => {
+/** Drawer navigator - wraps Tabs */
+const DrawerNavigator: React.FC = () => {
   return (
     <Drawer.Navigator
-      drawerContent={(props:any) => <CustomDrawerContent {...(props as any)} />}
-      screenOptions={{
+      drawerContent={ ( props: any ) => <CustomDrawerContent { ...( props as any ) } /> }
+      screenOptions={ {
         headerShown: false,
         drawerActiveTintColor: theme.colors.primary,
         drawerInactiveTintColor: 'gray',
-      }}
+      } }
     >
       <Drawer.Screen
         name="Main"
-        component={MainTabs as React.ComponentType<any>}
-        options={{
-          drawerIcon: ({ color, size }: any) => (
-            <MaterialIcons name="home" color={color} size={size} />
+        component={ MainTabs as React.ComponentType<any> }
+        options={ {
+          drawerIcon: ( { color, size }: any ) => (
+            <MaterialIcons name="home" color={ color } size={ size } />
           ),
-        }}
+        } }
       />
 
       <Drawer.Screen
         name="Payment"
-        component={PaymentScreen as React.ComponentType<any>}
-        options={{
-          drawerIcon: ({ color, size }: any) => (
-            <MaterialIcons name="payment" color={color} size={size} />
+        component={ PaymentScreen as React.ComponentType<any> }
+        options={ {
+          drawerIcon: ( { color, size }: any ) => (
+            <MaterialIcons name="payment" color={ color } size={ size } />
           ),
-        }}
+        } }
       />
 
       <Drawer.Screen
         name="My Tasks"
-        component={MyTasksScreen as React.ComponentType<any>}
-        options={{
-          drawerIcon: ({ color, size }: any) => (
-            <MaterialIcons name="check-circle" color={color} size={size} />
+        component={ MyTasksScreen as React.ComponentType<any> }
+        options={ {
+          drawerIcon: ( { color, size }: any ) => (
+            <MaterialIcons name="check-circle" color={ color } size={ size } />
           ),
-        }}
+        } }
       />
 
       <Drawer.Screen
         name="Safety"
-        component={SafetyScreen as React.ComponentType<any>}
-        options={{
-          drawerIcon: ({ color, size }: any) => (
-            <MaterialIcons name="security" color={color} size={size} />
+        component={ SafetyScreen as React.ComponentType<any> }
+        options={ {
+          drawerIcon: ( { color, size }: any ) => (
+            <MaterialIcons name="security" color={ color } size={ size } />
           ),
-        }}
+        } }
       />
-       {/* <Drawer.Screen
-        name="Flow Sample"
-        component={FlowSampleScreen as React.ComponentType<any>}
-        options={{
-          drawerIcon: ({ color, size }: any) => (
-            <MaterialIcons name="autorenew" color={color} size={size} />
-          ),
-        }}
-      /> */}
-      {/* <Drawer.Screen
-        name="Flow Improvements"
-        component={FlowImprovementSample as React.ComponentType<any>}
-        options={{
-          drawerIcon: ({ color, size }: any) => (
-            <MaterialIcons name="build" color={color} size={size} />
-          ),
-        }}
-      /> */}
     </Drawer.Navigator>
+  );
+};
+
+/** Root Stack - Top level navigator containing Drawer and Fullscreen pages */
+const AppNavigator: React.FC = () => {
+  return (
+    <RootStack.Navigator screenOptions={ { headerShown: false } }>
+      <RootStack.Screen name="MainDrawer" component={ DrawerNavigator } />
+
+      <RootStack.Screen name="ConfirmOrder" component={ ConfirmOrderScreen as React.ComponentType<any> } />
+      <RootStack.Screen name="ProcessingPayment" component={ ProcessingPaymentScreen as React.ComponentType<any> } />
+      <RootStack.Screen name="CompletePayment" component={ CompletePaymentScreen as React.ComponentType<any> } />
+      <RootStack.Screen name="CallPage" component={ CallPage as React.ComponentType<any> } />
+      <RootStack.Screen name="LiveTracking" component={ LiveTracking as React.ComponentType<any> } />
+    </RootStack.Navigator>
   );
 };
 

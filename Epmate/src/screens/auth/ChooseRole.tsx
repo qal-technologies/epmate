@@ -1,15 +1,14 @@
-import React, { useState } from 'react';
-import { Text,} from 'react-native-paper';
-import { View, StyleSheet } from 'react-native';
-import { theme } from '../../theme/theme';
+import React,{useState} from 'react';
+import {Text} from 'react-native-paper';
+import {View,StyleSheet} from 'react-native';
+import {theme} from '../../theme/theme';
 import RadioBtn from '../../components/SelectBtn';
 import AuthBtn from '../../components/AuthButton';
-import { firebaseFirestore } from '../../utils/firebaseFirestore';
-import { useDispatch } from 'react-redux';
-import type { RootStackParamList } from 'navigation/types';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNavigation,} from '@react-navigation/native';
-import { login } from 'state/slices/authSlice';
+import {firebaseFirestore} from '../../utils/firebaseFirestore';
+import {useDispatch,useSelector} from 'react-redux';
+import type {RootStackParamList} from 'navigation/types';
+import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {updateUserProfile} from 'state/slices/authSlice';
 
 type RoleScreenProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -17,47 +16,77 @@ type RoleScreenProp = NativeStackNavigationProp<
 >;
 
 type Props = {
-  userId?: string;
   navigation?: RoleScreenProp;
 };
 
-const RolePage: React.FC<Props> = ({navigation, userId}) => {
-  const [userRole, setUserRole] = useState('user');
+const RolePage: React.FC<Props> = ({navigation}) =>
+{
+  const [userRole,setUserRole] = useState<'user' | 'helper'>('user');
+  const dispatch = useDispatch();
+  const authState = useSelector((state: any) => state.auth);
+  const [loading,setLoading] = useState(false);
+  const {user} = authState;
 
   const roles = [
     {
-      name: 'user',
+      name: 'user' as const,
       title: 'Get Help',
       info: 'Find someone trusted to assist you with your needs',
       icon: 'location-pin',
     },
     {
-      name: 'helper',
+      name: 'helper' as const,
       title: 'Offer Help',
       info: 'Provide assistance and earn money',
       icon: 'handshake',
     },
   ];
 
-  const dispatch = useDispatch();
-  
-  const handleRoleSelection = async () => {
-    if (userRole) {
-      // firebaseFirestore
-      //   .addDocument('users', { userId: { role: userRole } })
-      //   .then(() => {
-      dispatch(login({ role: userRole }));
-      if (userRole == 'user') navigation.navigate('userName', {userId})
-      else navigation.navigate('Home');
-        // });
-    }
+  const handleRoleSelection = async () =>
+  {
+    setLoading(true);
+    setTimeout(async () =>
+    {
+
+      if (userRole)
+      {
+        // Update role in Redux store
+        dispatch(updateUserProfile({role: userRole}));
+
+        // TODO: Save data to Firestore
+        // await firebaseFirestore.updateDocument('users',user.id,{name: user.displayName,role: user.role,mobile: user.mobile,mobileVerified: user.mobileVerified,});
+
+        // Check if user already has displayName
+        const hasDisplayName = authState.user?.displayName && authState.user.displayName.trim().length > 0;
+
+        if (hasDisplayName)
+        {
+          // User already has displayName, profile is complete
+          // AppRootNavigator will automatically navigate to Main
+          // because profile check will pass
+        } else
+        {
+          // User needs to set displayName
+          if (userRole === 'user')
+          {
+            navigation.navigate('userName');
+          } else
+          {
+            // Helpers can skip userName and go straight to home
+            // AppRootNavigator will handle navigation automatically
+          }
+        }
+      }
+      setLoading(false);
+    },2500);
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>How would you like to use Epmate?</Text>
 
-      {roles.map(role => {
+      {roles.map(role =>
+      {
         return (
           <RadioBtn
             key={role.name}
@@ -65,12 +94,11 @@ const RolePage: React.FC<Props> = ({navigation, userId}) => {
             description={role.info}
             title={role.title}
             icon={role.icon}
-            setSelected={value => setUserRole(value)}
+            setSelected={value => setUserRole(value as 'user' | 'helper')}
             selected={role.name == userRole}
           />
         );
       })}
-
       <Text
         style={{
           marginTop: 1,
@@ -84,6 +112,8 @@ const RolePage: React.FC<Props> = ({navigation, userId}) => {
       </Text>
 
       <AuthBtn
+        loading={loading}
+        loadingText='Loading...'
         disabled={!userRole}
         btnStyle="solid"
         btnText="Continue"

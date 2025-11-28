@@ -85,8 +85,8 @@ const firebaseAuth = {
     return auth.currentUser;
   },
 
-  updatePassword:async (passoword)=>{
-    return await updatePassword(auth.currentUser, passoword);
+  updatePassword:async (passoword:any)=>{
+    return await updatePassword(auth.currentUser as any, passoword);
   }
 };
 

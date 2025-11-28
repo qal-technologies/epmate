@@ -1,20 +1,15 @@
-// navigation/types.ts
 export type HomeStackParamList = {
-  Home: { userId?: string } | undefined;
-  PickupDelivery: undefined;
-  ErrandType: { visible: boolean } | undefined;
+  Home: undefined;
+  ErrandType: undefined;
   TaskCompletion: undefined;
   Rating: undefined;
   Issue: undefined;
-  Payment: undefined;
-  ConfirmOrder: undefined;
-  CompletePayment: undefined;
-  ProcessingPayment: undefined;
 };
 
 export type MainTabParamList = {
   Home: undefined;
   Account: undefined;
+  Profile: undefined;
 };
 
 export type DrawerParamList = {
@@ -29,15 +24,20 @@ export type AuthStackParamList = {
   Signup: undefined;
   Terms: undefined;
   Policy: undefined;
-  Role: { userId?: string; } | undefined;
-  userName: { userId?: string } | undefined;
-  otp: { userId?: string; otp: number | string; mobile: number | string } | undefined;
-  forgotPassword: { userId?: string } | undefined;
-  Home: { userId?: string } | undefined;
-
+  Role: undefined;
+  userName: undefined;
+  otp: { otp: number | string; mobile: number | string; };
+  forgotPassword: undefined;
+  Home: undefined;
+  Payment: undefined;
 };
 
-export type RootStackParamList = AuthStackParamList & {
+export type RootStackParamList = {
   MainDrawer: undefined;
-  Home: { userId?: string } | undefined;
+  ConfirmOrder: undefined;
+  ProcessingPayment: undefined;
+  CompletePayment: undefined;
+  CallPage: undefined;
+  LiveTracking: undefined;
+  Auth: undefined;
 };

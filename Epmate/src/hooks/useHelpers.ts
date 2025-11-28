@@ -9,7 +9,7 @@ export interface HelperData {
   id: string;
   name: string;
   tagPrice: number;
-  totalTask: number;
+  totalTasks: number;
   rating: number;
   distance: number;
   [key: string]: any;

@@ -1,33 +1,34 @@
-import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
-import { TextInput, Provider, Text, Modal, Portal } from 'react-native-paper';
+import React,{useState} from 'react';
+import {View,StyleSheet} from 'react-native';
+import {TextInput,Provider,Text,Modal,Portal} from 'react-native-paper';
 import AuthBtn from '../../components/AuthButton';
-import { theme } from '../../theme/theme';
-import { useSelector } from 'react-redux';
+import {theme} from '../../theme/theme';
+import {useDispatch, useSelector} from 'react-redux';
 import MyInput from 'components/myInput';
+import {setLocationData} from 'state/slices/orderSlice';
 
-interface Props {
+interface Props
+{
   visible: boolean;
   onDismiss: () => void;
-  onFindHelpers: (data: {
-    pickupLocation: string;
-    deliveryLocation: string;
-    userId: string;
-  }) => void;
 }
 const PickupDelivery: React.FC<Props> = ({
   onDismiss,
-  onFindHelpers,
   visible,
-}) => {
-  const [pickupLocation, setPickupLocation] = useState('');
-  const [deliveryLocation, setDeliveryLocation] = useState('');
+}) =>
+{
+  const [pickupLocation,setPickupLocation] = useState('');
+  const [deliveryLocation,setDeliveryLocation] = useState('');
   const storedUserId = useSelector((state: any) => state.auth.user?.id);
 
-  const isButtonEnabled = pickupLocation !== '' && deliveryLocation !== '';
+  const isButtonEnabled = pickupLocation.trim() !== '' && deliveryLocation.trim() !== '';
 
-  const findHelper = async () => {
-    try {
+  const dispatch = useDispatch();
+  
+  const findHelper = async () =>
+  {
+    try
+    {
       // await fetch('/.netlify/functions/createErrand', {
       //   method: 'POST',
       //   body: JSON.stringify({
@@ -36,14 +37,14 @@ const PickupDelivery: React.FC<Props> = ({
       //     userId: storedUserId,
       //   }),
       // });
-      onFindHelpers({
+      dispatch(setLocationData({
         pickupLocation,
         deliveryLocation,
-        userId: storedUserId,
-      });
+      }));
       onDismiss();
-    } catch (error) {
-      console.error('Error creating errand:', error);
+    } catch (error)
+    {
+      console.error('Error creating errand:',error);
     }
   };
 
@@ -71,7 +72,7 @@ const PickupDelivery: React.FC<Props> = ({
 
           <MyInput type='text' value={deliveryLocation} setValue={setDeliveryLocation}
             placeholder="Enter delivery location"
-            label="Enter delivery Location"            withLabel
+            label="Enter delivery Location" withLabel
             selectionColor={theme.colors.primary}
           />
 
@@ -98,7 +99,7 @@ const styles = StyleSheet.create({
     padding: 20,
     alignItems: 'center',
     flex: 1,
-    width:'100%',
+    width: '100%',
   },
   modal: {
     backgroundColor: 'white',
@@ -108,7 +109,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 30,
     fontWeight: 'bold',
-    marginVertical:20,
+    marginVertical: 20,
     marginBottom: 30,
     textAlign: 'center',
   },

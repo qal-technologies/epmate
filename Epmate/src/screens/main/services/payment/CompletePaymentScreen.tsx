@@ -1,8 +1,7 @@
-import React from 'react';
-import { View, Text, StyleSheet, Clipboard } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Clipboard, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import { TouchableRipple } from 'react-native-paper';
+import { Portal, TouchableRipple } from 'react-native-paper';
 import { theme } from '../../../../theme/theme';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../../../../navigation/types';
@@ -12,44 +11,53 @@ import {
   MaterialIcons,
 } from '@expo/vector-icons';
 import AuthBtn from '../../../../components/AuthButton';
+import type { HelperData } from 'hooks/useHelpers';
+import { updateOrderStatus } from 'state/slices/orderSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { ScrollView } from 'react-native-gesture-handler';
 
 type CompletePayment = NativeStackNavigationProp<
   HomeStackParamList,
-  'ConfirmOrder'
+  'CompletePayment'
 >;
 
-type FluttweWave = {
-  accountNumber: number;
-  accountName: string;
-  [key: string]: any;
-};
-
 type Props = {
-  price: number | any;
   navigation: CompletePayment;
-  currency: string;
-  helper: FluttweWave;
 };
 
-const CompletePaymentScreen: React.FC<Props> = ({ navigation }) => {
-  const route = navigation
-    .getState()
-    .routes.find(r => r.name === 'CompletePayment');
-  const {
-    helper: helperData,
-    price: priceData,
-    currency: currencyData,
-  } = route?.params || {};
-  const helper = helperData;
-  const price = priceData;
-  const currency = currencyData;
+const CompletePaymentScreen: React.FC<Props> = ( { navigation } ) => {
+  const dispatch = useDispatch();
+
+  // Get data from Redux instead of navigation params
+  const { paymentData, selectedHelper } = useSelector( ( state: any ) => state.order );
+
+  const [ paymentID, setPaymentID ] = useState( '123456' );
+
+  const AccName = 'Flutterwave Payments';
+  const AccNo = '12345678901';
+
+  // Navigation guard: redirect if no payment data
+  useEffect( () => {
+    if ( !paymentData ) {
+      Alert.alert( 'Invalid Access', 'Please confirm your order first' );
+      navigation.navigate( 'MainDrawer' );
+    }
+  }, [ paymentData, navigation ] );
+
+  const handlePayment = () => {
+    // Update order status to processing
+    dispatch( updateOrderStatus( 'processing' ) );
+
+    // Navigate without params - paymentID is now part of state
+    navigation.navigate( 'ProcessingPayment' );
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+    <SafeAreaView style={ styles.container }>
+      <View style={ styles.header }>
         <TouchableRipple
-          onPress={() => navigation.goBack()}
-          style={{
+          onPress={ () => navigation.goBack() }
+          style={ {
             width: 40,
             height: 40,
             justifyContent: 'center',
@@ -57,133 +65,122 @@ const CompletePaymentScreen: React.FC<Props> = ({ navigation }) => {
             padding: 10,
             borderRadius: '50%',
             backgroundColor: theme.colors.primaryTrans,
-          }}
+          } }
         >
           <MaterialIcons
             name="arrow-back"
-            size={22}
-            color={theme.colors.text}
+            size={ 22 }
+            color={ theme.colors.text }
           />
         </TouchableRipple>
-        <Text style={styles.headerTitle}>Complete Your Payment</Text>
+        <Text style={ styles.headerTitle }>Complete Your Payment</Text>
       </View>
 
-      <View style={styles.card}>
-        <FontAwesome
-          name="bank"
-          size={40}
-          style={{ marginVertical: 15 }}
-          color={theme.colors.primary}
+
+      <ScrollView>
+        <View style={ styles.card }>
+          <FontAwesome
+            name="bank"
+            size={ 40 }
+            style={ { marginVertical: 15, alignSelf: 'center' } }
+            color={ theme.colors.primary }
+          />
+          <Text style={ styles.paymentMethod }>One-Time Bank Transfer</Text>
+          <Text style={ styles.paymentInstruction }>
+            Transfer the exact amount to confirm your order
+          </Text>
+        </View>
+
+        <View style={ styles.card }>
+          <Text style={ styles.sectionTitle }>Payment Details</Text>
+          <View style={ styles.detailContainer }>
+            <View>
+              <Text style={ [ styles.detailLabel, { minWidth: '100%' } ] }>AMOUNT DUE:</Text>
+              <Text style={ [ styles.detailValue, { fontSize: 25, color: theme.colors.primary } ] }>
+                { paymentData?.price }
+              </Text>
+            </View>
+            <CopyBtn value={ paymentData?.price } title="Copy" />
+          </View>
+          <View style={ styles.detailContainer }>
+            <Text style={ styles.detailLabel }>BANK NAME:</Text>
+            <Text style={ styles.detailValue }>{ AccName }</Text>
+          </View>
+          <View style={ styles.detailContainer }>
+            <Text style={ styles.detailLabel }>ACCOUNT NUMBER:</Text>
+            <Text style={ styles.detailValue }>{ AccNo }</Text>
+            <CopyBtn value={ AccNo } title="Copy" />
+          </View>
+        </View>
+
+        <Text style={ styles.importantNote }>
+          This account is for this transaction only and expires in <Text style={ { fontWeight: 'bold', color: 'black' } }>(Flutterwave:Time)</Text>
+        </Text>
+
+        <AuthBtn
+          btnText="I HAVE PAID"
+          btnStyle="solid"
+          btnMode="contained"
+          onClick={ handlePayment }
         />
-        <Text style={styles.paymentMethod}>One-Time Bank Transfer</Text>
-        <Text style={styles.paymentInstruction}>
-          Transfer the exact amount to confirm your order
+
+        <Text style={ styles.footerText }>
+          Payments are processed securely by Flutterwave
         </Text>
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Payment Details</Text>
-        <View style={styles.detailContainer}>
-          <Text style={styles.detailLabel}>Amount Due:</Text>
-          <Text style={styles.detailValue}>
-            {currency}
-            {price}
-          </Text>
-          <CopyBtn value={helper} title="Copy" />
-        </View>
-        <View style={styles.detailContainer}>
-          <Text style={styles.detailLabel}>Bank Name:</Text>
-          <Text style={styles.detailValue}>Flutterwave Payments</Text>
-        </View>
-        <View style={styles.detailContainer}>
-          <Text style={styles.detailLabel}>Account Number:</Text>
-          <Text style={styles.detailValue}>{'1234567890'}</Text>
-          <CopyBtn value={'1234567890'} title="Copy" />
-        </View>
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Bank Account Details</Text>
-        <View style={styles.detailContainer}>
-          <Text style={styles.detailLabel}>Account Name:</Text>
-          <Text style={styles.detailValue}>
-            {helper.accountName || 'Name here'}
-          </Text>
-          <CopyBtn value={helper.accountName || 'Name here'} title="Copy" />
-        </View>
-        <Text style={styles.importantNote}>
-          Important: This account is for one-time use only. Your order will be
-          confirmed upon payment receipt.
-        </Text>
-      </View>
-
-      <AuthBtn
-        btnText="I HAVE PAID"
-        btnStyle="solid"
-        btnMode="contained"
-        onClick={() => navigation.navigate('ProcessingPayment')}
-      />
-
-      <Text style={styles.footerText}>
-        Payments are processed securely by Flutterwave
-      </Text>
+      </ScrollView>
     </SafeAreaView>
   );
 };
 
-const CopyBtn: React.FC<{ value: any; title?: string }> = ({
+const CopyBtn: React.FC<{ value: any; title?: string; }> = ( {
   value,
   title,
-}) => {
-  const handleCopy = (text: any) => {
-    Clipboard.setString(text);
+} ) => {
+  const handleCopy = ( text: any ) => {
+    Clipboard.setString( text );
   };
 
   return (
     <TouchableRipple
-      style={styles.copyButton}
-      onPress={() => handleCopy(value)}
+      style={ styles.copyButton }
+      onPress={ () => handleCopy( value ) }
     >
-      {title ? (
-        <Text style={{ color: theme.colors.primary }}>{title}</Text>
+      { title ? (
+        <Text style={ { color: theme.colors.primary } }>{ title }</Text>
       ) : (
-        <MaterialCommunityIcons name="clipboard" />
-      )}
+        <FontAwesome name="clipboard" />
+      ) }
     </TouchableRipple>
   );
 };
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create( {
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
-    alignItems: 'center',
-    paddingTop: 10,
+    padding: 16,
   },
   header: {
+    minWidth: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 26,
+    marginBottom: 16,
     gap: 10,
-    minWidth: '98%',
   },
   backButton: {
     fontSize: 24,
     marginRight: 16,
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: 'bold',
+    fontFamily: theme.fonts.bold,
   },
   card: {
     backgroundColor: theme.colors.secondary,
-    borderRadius: 14,
+    borderRadius: 8,
     padding: 16,
     marginBottom: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    textAlign: 'center',
-    width: '90%',
   },
   paymentMethod: {
     fontSize: 18,
@@ -200,7 +197,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 8,
-    textAlign:'left',
+    textAlign: 'left',
   },
   detailContainer: {
     flexDirection: 'row',
@@ -231,13 +228,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.primaryTrans,
     color: theme.colors.primary,
-    paddingInline: 8,
+    paddingInline: 10,
   },
   importantNote: {
     fontSize: 14,
     color: 'gray',
-    opacity:.8,
+    opacity: .8,
+    marginBlock: 8,
     marginTop: 18,
+    textAlign: 'center',
   },
   paidButton: {
     backgroundColor: theme.colors.primary,
@@ -256,6 +255,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 16,
   },
-});
+} );
 
 export default CompletePaymentScreen;

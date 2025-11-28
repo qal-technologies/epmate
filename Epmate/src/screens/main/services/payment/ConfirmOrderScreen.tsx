@@ -11,9 +11,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../../../../navigation/types';
 import { theme } from '../../../../theme/theme';
-import { Button, Portal, TouchableRipple } from 'react-native-paper';
+import { Portal, TouchableRipple } from 'react-native-paper';
 import AuthBtn from '../../../../components/AuthButton';
 import { MaterialIcons } from '@expo/vector-icons';
+import type { HelperData } from 'hooks/useHelpers';
+import formatPrice from 'utils/formatPrice';
+import { useSelector, useDispatch } from 'react-redux';
+import { setPaymentData, updateOrderStatus } from 'state/slices/orderSlice';
+import { useEffect } from 'react';
+import { ScrollView } from 'react-native-gesture-handler';
+import useTaskName from 'hooks/useServiceType';
 
 type ConfirmOrderScreenProps = NativeStackNavigationProp<
   HomeStackParamList,
@@ -24,20 +31,53 @@ type Props = {
   navigation: ConfirmOrderScreenProps;
 };
 
-const ConfirmOrderScreen: React.FC<Props> = ({ navigation }) => {
-  const route = navigation
-    .getState()
-    .routes.find(r => r.name === 'ConfirmOrder');
-  const { helperData: helper, locationData: location } = route?.params || {};
-  const helperData = helper;
-  const locationData = location;
+const ConfirmOrderScreen: React.FC<Props> = ( { navigation } ) => {
+  const dispatch = useDispatch();
+
+  // Get data from Redux instead of navigation params
+  const { selectedHelper, locationData, serviceType } = useSelector( ( state: any ) => state.order );
+  const { user } = useSelector( ( state: any ) => state.auth );
+
+  const helperData: HelperData = selectedHelper;
+  const currency = '₦';
+  let charge: string | number = 150;
+  let total: string | number = helperData.tagPrice + charge;
+  total = formatPrice( total );
+  charge = formatPrice( charge );
+
+  // Navigation guard: redirect if no helper selected
+  useEffect( () => {
+    if ( !helperData ) {
+      Alert.alert( 'Invalid Access', 'Please select a helper first' );
+      navigation.navigate( 'MainDrawer' );
+    }
+  }, [ helperData, navigation ] );
+
+  let taskType = useTaskName();
+
+
+  const handleConfirmOrder = () => {
+    // Set payment data in Redux
+    dispatch( setPaymentData( {
+      helperID: helperData.id,
+      userID: user.id,
+      price: total,
+      currency: currency,
+    } ) );
+
+    // Update order status
+    dispatch( updateOrderStatus( 'confirmed' ) );
+
+    // Navigate without params - data is in Redux
+    navigation.navigate( 'CompletePayment' );
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+    <SafeAreaView style={ styles.container }>
+      <View style={ styles.header }>
         <TouchableRipple
-          onPress={() => navigation.goBack()}
-          style={{
+          onPress={ () => navigation.goBack() }
+          style={ {
             width: 40,
             height: 40,
             justifyContent: 'center',
@@ -45,99 +85,104 @@ const ConfirmOrderScreen: React.FC<Props> = ({ navigation }) => {
             padding: 10,
             borderRadius: '50%',
             backgroundColor: theme.colors.primaryTrans,
-          }}
+          } }
         >
           <MaterialIcons
             name="arrow-back"
-            size={22}
-            color={theme.colors.text}
+            size={ 22 }
+            color={ theme.colors.text }
           />
         </TouchableRipple>
-        <Text style={styles.headerTitle}>Confirm Your Order</Text>
+        <Text style={ styles.headerTitle }>Confirm Your Order</Text>
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.taskType}>Task Type: Pickup and Deliver</Text>
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Locations</Text>
-        <View style={styles.locationContainer}>
-          <Text style={styles.locationLabel}>Pickup Location:</Text>
-          <Text style={styles.locationText}>
-            {locationData?.pickupLocation}
-          </Text>
+      <ScrollView>
+        <View style={ styles.card }>
+          <Text style={ [ styles.taskType, { fontWeight: 'bold' } ] }>Task Type: <Text style={ styles.taskType }>{ taskType }</Text></Text>
         </View>
-        <View style={styles.locationContainer}>
-          <Text style={styles.locationLabel}>Delivery Location:</Text>
-          <Text style={styles.locationText}>
-            {locationData?.deliveryLocation}
-          </Text>
-        </View>
-      </View>
 
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Helper Details</Text>
-        <View style={styles.helperContainer}>
-          {helperData.image !== null ? (
-            <Image
-              source={{ uri: 'https://via.placeholder.com/50' }}
-              style={styles.avatar}
-            />
-          ) : (
-            <MaterialIcons
-              name="verified-user"
-              color={theme.colors.primary}
-              size={50}
-              style={styles.avatar}
-            />
-          )}
-          <View>
-            <Text style={styles.helperName}>{helperData.name}</Text>
-            <Text style={styles.helperRating}>
-              Rating: {helperData.rating}/5 ★
+        <View style={ styles.card }>
+          <Text style={ styles.sectionTitle }>Locations</Text>
+
+          <View style={ styles.locationContainer }>
+            <Text style={ styles.locationLabel }>Pickup Location:</Text>
+
+            <Text style={ styles.locationText }>
+              { locationData?.pickupLocation }
             </Text>
-            <Text style={styles.helperTasks}>
-              Total tasks completed: {helperData.totalTasks}
+          </View>
+
+          <View style={ styles.locationContainer }>
+            <Text style={ styles.locationLabel }>Delivery Location:</Text>
+
+            <Text style={ styles.locationText }>
+              { locationData?.deliveryLocation }
             </Text>
           </View>
         </View>
-      </View>
 
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Price Summary</Text>
-        <Text style={styles.price}>₦1,650</Text>
-        <Text style={styles.priceDetail}>Service fee: ₦150</Text>
-        <Text style={styles.priceDetail}>Helper's charge: ₦1,500</Text>
-        <Text style={styles.priceDetail}>Total: ₦1,800</Text>
-      </View>
+        <View style={ styles.card }>
+          <Text style={ styles.sectionTitle }>Helper Details</Text>
+          <View style={ styles.helperContainer }>
+            { helperData?.image !== null ? (
+              <Image
+                source={ { uri: 'https://via.placeholder.com/50' } }
+                style={ styles.avatar }
+              />
+            ) : (
+              <MaterialIcons
+                name="verified-user"
+                  color={ theme.colors.primary }
+                  size={ 50 }
+                  style={ styles.avatar }
+                />
+            ) }
+            <View>
+              <Text style={ styles.helperName }>{ helperData?.name }</Text>
+              <Text style={ styles.helperRating }>
+                Rating: { helperData?.rating }/5 <Text
+                  style={ {
+                    color: theme.colors.primary,
+                    fontSize: 16
+                  } }>
+                  ★
+                </Text>
+              </Text>
+              <Text style={ styles.helperTasks }>Total tasks completed: { helperData?.totalTasks }
+              </Text>
+            </View>
+          </View>
+        </View>
 
-      <Text style={styles.confirmButtonText}>
-        Confirm your order details before proceeding.
-      </Text>
+        <View style={ styles.card }>
+          <Text style={ styles.sectionTitle }>Price Summary</Text>
+          <Text style={ styles.price }>{ total }</Text>
+          <Text style={ styles.priceDetail }>Service fee: { charge }</Text>
+          <Text style={ styles.priceDetail }>Helper's charge: { formatPrice( helperData?.tagPrice, currency ) }</Text>
+        </View>
 
-      <AuthBtn
-        btnText="CONFIRM ORDER"
-        btnStyle="solid"
-        onClick={() =>
-          navigation.navigate('CompletePayment', {
-            helper: helperData,
-            price: 1800,
-            currency: '₦',
-          })}
+        <Text style={ styles.confirmButtonText }>
+          Confirm your order details before proceeding.
+        </Text>
 
-        btnMode="contained"
-        mv
-      />
+        <AuthBtn
+          btnText="CONFIRM ORDER"
+          btnStyle="solid"
+          onClick={ handleConfirmOrder }
+          btnMode="contained"
+          mv
+        />
+      </ScrollView>
     </SafeAreaView>
   );
 };
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create( {
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,
     padding: 16,
+    paddingBottom: 0
   },
   header: {
     flexDirection: 'row',
@@ -162,6 +207,7 @@ const styles = StyleSheet.create({
   },
   taskType: {
     fontSize: 16,
+    fontWeight: 'light'
   },
   sectionTitle: {
     fontSize: 18,
@@ -169,7 +215,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   locationContainer: {
-    marginBottom: 8,
+    marginBottom: 12,
   },
   locationLabel: {
     fontSize: 16,
@@ -205,6 +251,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 8,
+    color: theme.colors.primary,
   },
   priceDetail: {
     fontSize: 16,
@@ -216,10 +263,10 @@ const styles = StyleSheet.create({
   },
   confirmButtonText: {
     color: theme.colors.placeholder,
-    fontSize: 16,
+    fontSize: 14,
     textAlign: 'center',
-    marginTop: 10,
+    marginTop: 15,
   },
-});
+} );
 
 export default ConfirmOrderScreen;
