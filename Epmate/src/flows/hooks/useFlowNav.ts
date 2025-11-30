@@ -12,7 +12,7 @@ export function useFlowNav(scope?: string) {
   // Return functions directly - don't call them until user invokes
   const nextFn = React.useCallback((opts?: FlowCreateOptions) => {
     if (!targetScope) {
-      console.warn('[useFlowNav.next] No scope available. Provide scope explicitly or ensure component is wrapped in FlowProvider.');
+      if (__DEV__) console.warn('[useFlowNav.next] No scope available. Provide scope explicitly or ensure component is wrapped in FlowProvider.');
       return Promise.resolve(false);
     }
     return next(targetScope, opts);
@@ -20,7 +20,7 @@ export function useFlowNav(scope?: string) {
 
   const prevFn = React.useCallback((opts?: FlowCreateOptions) => {
     if (!targetScope) {
-      console.warn('[useFlowNav.prev] No scope available. Provide scope explicitly or ensure component is wrapped in FlowProvider.');
+      if (__DEV__) console.warn('[useFlowNav.prev] No scope available. Provide scope explicitly or ensure component is wrapped in FlowProvider.');
       return Promise.resolve(false);
     }
     return prev(targetScope, opts);
@@ -28,7 +28,7 @@ export function useFlowNav(scope?: string) {
 
   const openFn = React.useCallback((childName: string, opener?: string, opts?: FlowCreateOptions) => {
     if (!targetScope) {
-      console.warn('[useFlowNav.open] No scope available. Provide scope explicitly or ensure component is wrapped in FlowProvider.');
+      if (__DEV__) console.warn('[useFlowNav.open] No scope available. Provide scope explicitly or ensure component is wrapped in FlowProvider.');
       return Promise.resolve(false);
     }
     return open(targetScope, childName, opener, opts);
@@ -36,7 +36,7 @@ export function useFlowNav(scope?: string) {
 
   const closeFn = React.useCallback(() => {
     if (!targetScope) {
-      console.warn('[useFlowNav.close] No scope available. Provide scope explicitly or ensure component is wrapped in FlowProvider.');
+      if (__DEV__) console.warn('[useFlowNav.close] No scope available. Provide scope explicitly or ensure component is wrapped in FlowProvider.');
       return Promise.resolve(false);
     }
     return close(targetScope);
@@ -44,7 +44,7 @@ export function useFlowNav(scope?: string) {
 
   const goToFn = React.useCallback((...pathSegments: string[]) => {
     if (!targetScope) {
-      console.warn('[useFlowNav.goTo] No scope available. Provide scope explicitly or ensure component is wrapped in FlowProvider.');
+      if (__DEV__) console.warn('[useFlowNav.goTo] No scope available. Provide scope explicitly or ensure component is wrapped in FlowProvider.');
       return Promise.resolve(false);
     }
     return goTo(targetScope, ...pathSegments);

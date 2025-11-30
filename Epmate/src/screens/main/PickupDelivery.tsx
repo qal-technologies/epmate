@@ -44,7 +44,7 @@ const PickupDelivery: React.FC<Props> = ({
       onDismiss();
     } catch (error)
     {
-      console.error('Error creating errand:',error);
+      if (__DEV__) console.error('Error creating errand:',error);
     }
   };
 

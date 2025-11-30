@@ -77,7 +77,7 @@ function createFlowComponentOnce(
           ensureRuntime(parentId);
         }
       } catch (err) {
-        console.error(`[Flow] register error:`, err);
+        if (__DEV__) console.error(`[Flow] register error:`, err);
         registeredIds.delete(id); // Remove if registration failed
       }
     }

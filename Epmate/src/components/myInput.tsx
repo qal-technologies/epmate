@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import {
   View,
   TextInputProps,
@@ -8,9 +8,9 @@ import {
   Text,
   Dimensions,
 } from 'react-native';
-import { theme } from '../theme/theme';
-import Animated, { FadeInDown } from 'react-native-reanimated';
-import { MaterialIcons } from '@expo/vector-icons';
+import {theme} from '../theme/theme';
+import Animated, {FadeInDown} from 'react-native-reanimated';
+import {MaterialIcons} from '@expo/vector-icons';
 
 type MyInputProps = TextInputProps & {
   containerStyle?: object;
@@ -27,7 +27,7 @@ type MyInputProps = TextInputProps & {
   labelNote?: string;
   value?: any;
   upperMb?: number;
-  setValue?: ( state: any ) => void;
+  setValue?: (state: any) => void;
   disabled?: boolean;
   country?: string;
 };
@@ -48,11 +48,11 @@ const MyInput: React.FC<MyInputProps> = ({
   labelNote,
   centerUpper,
   upperMb,
-  disabled = false, 
+  disabled = false,
   ...rest
 }) => {
   const getKeyboardType = () => {
-    switch (type) {
+    switch(type) {
       case 'mobile':
       case 'number':
       case 'otp':
@@ -70,45 +70,44 @@ const MyInput: React.FC<MyInputProps> = ({
 
   return (
     <View
-      style={ {
+      style={{
         flexDirection: 'column',
-        gap: 3,
         alignItems: 'flex-start',
-        marginVertical: 12,
-      } }
+        marginVertical: 10,
+      }}
     >
-      { withLabel && label && (
-        <View style={ [ styles.upper, { marginBottom: upperMb ? upperMb : 10 } ] }>
+      {withLabel && label && (
+        <View style={[styles.upper, {marginBottom: upperMb ? upperMb : 5}]}>
           <Text
-            style={ [
+            style={[
               styles.label,
-              centerUpper && { textAlign: 'center', alignSelf: 'center' },
-            ] }
+              centerUpper && {textAlign: 'center', alignSelf: 'center'},
+            ]}
           >
-            { label }
+            {label}
           </Text>
-          { labelNote && (
+          {labelNote && (
             <Text
-              style={ [
+              style={[
                 styles.note,
-                centerUpper && { textAlign: 'center', alignSelf: 'center' },
-              ] }
+                centerUpper && {textAlign: 'center', alignSelf: 'center'},
+              ]}
             >
-              { labelNote }
+              {labelNote}
             </Text>
-          ) }
+          )}
         </View>
-      ) }
+      )}
 
       <Animated.View
-        entering={ FadeInDown.springify() }
-        style={ [
+        entering={FadeInDown.springify()}
+        style={[
           styles.container,
           containerStyle,
           rounded && styles.rounded,
           borderless && styles.borderless,
-          focused && { borderColor: theme.colors.primary },
-          type === 'otp' && { width: '30%', maxWidth: 200 },
+          focused && {borderColor: theme.colors.primary},
+          type === 'otp' && {width: '30%', maxWidth: 200},
         ]}
       >
         {type == 'mobile' && (
@@ -136,7 +135,7 @@ const MyInput: React.FC<MyInputProps> = ({
                 color: theme.colors.text,
               }}
               value={gotten?.code}
-              editable={ false }
+              editable={false}
               onFocus={() => setFocused(!focused)}
               onBlur={() => setFocused(!focused)}
             />
@@ -155,7 +154,7 @@ const MyInput: React.FC<MyInputProps> = ({
           ]}
           maxLength={type === 'otp' ? 4 : type == 'mobile' ? 11 : 50}
           value={value}
-          onChangeText={ text => setValue && setValue( text ) }
+          onChangeText={text => setValue && setValue(text)}
           placeholder={placeholder}
           secureTextEntry={secureTextEntry}
           keyboardType={getKeyboardType()}
@@ -164,7 +163,7 @@ const MyInput: React.FC<MyInputProps> = ({
           onFocus={() => setFocused(!focused)}
           onBlur={() => setFocused(!focused)}
           {...rest}
-          editable={ !disabled }
+          editable={!disabled}
         />
       </Animated.View>
     </View>
@@ -194,7 +193,7 @@ const numberNflag = [
   },
 ];
 
-export const MobileInput: React.FC<MyInputProps> = ( {
+export const MobileInput: React.FC<MyInputProps> = ({
   country,
   placeholder,
   keyboardType,
@@ -206,7 +205,7 @@ export const MobileInput: React.FC<MyInputProps> = ( {
     number => number.name == country || 'nigeria',
   );
 
-  const [ showDrop, setShowDrop ] = useState( false );
+  const [showDrop, setShowDrop] = useState(false);
   const [focused, setFocused] = useState(false);
 
   return (
@@ -238,7 +237,7 @@ export const MobileInput: React.FC<MyInputProps> = ( {
             color: theme.colors.text,
           }}
           value={gotten?.code}
-          editable={ false }
+          editable={false}
           onFocus={() => setFocused(!focused)}
           onBlur={() => setFocused(!focused)}
         />
@@ -257,9 +256,9 @@ export const MobileInput: React.FC<MyInputProps> = ( {
       />
       {showDrop && (
         <View>
-          { numberNflag.map( ( tag, index ) => {
+          {numberNflag.map((tag, index) => {
             return (
-              <TouchableOpacity key={ index }>
+              <TouchableOpacity key={index}>
                 <Text>{tag.code}</Text>
                 <Text>{tag.name}</Text>
               </TouchableOpacity>
@@ -273,7 +272,7 @@ export const MobileInput: React.FC<MyInputProps> = ( {
 
 const styles = StyleSheet.create({
   container: {
-    width: Dimensions.get( 'window' ).width - 50,
+    width: Dimensions.get('window').width - 50,
     maxWidth: 400,
     flex: 1,
     borderWidth: 1.5,

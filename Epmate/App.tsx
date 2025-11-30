@@ -7,11 +7,16 @@ import { store, persistor } from './src/state/store';
 import AppRootNavigator from './src/navigation/AppRootNavigator';
 import { NavigationContainer } from '@react-navigation/native';
 
+import { ErrorBoundary } from './src/components/ErrorBoundary';
+import { OfflineNotice } from './src/components/OfflineNotice';
+
 const App = () => {
   return (
     <Provider store={ store }>
         <PersistGate loading={ null } persistor={ persistor }>
-          <Root />
+          <ErrorBoundary>
+            <Root />
+          </ErrorBoundary>
         </PersistGate>
     </Provider>
   );
@@ -21,6 +26,7 @@ const Root = () => {
   return (
     <PaperProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>
+        <OfflineNotice />
         <NavigationContainer>
           <AppRootNavigator />
         </NavigationContainer>

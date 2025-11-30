@@ -40,7 +40,7 @@ export async function runWithTimeout<T>(
 ): Promise<T> {
   return new Promise(async resolve => {
     const timer = setTimeout(() => {
-      console.warn(`[Flow] lifecycle function timed out after ${timeoutMs}ms.`);
+      if (__DEV__) console.warn(`[Flow] lifecycle function timed out after ${timeoutMs}ms.`);
       resolve(fallback);
     }, timeoutMs);
 
@@ -49,7 +49,7 @@ export async function runWithTimeout<T>(
       clearTimeout(timer);
       resolve(result);
     } catch (err) {
-      console.error('[Flow] lifecycle function error:', err);
+      if (__DEV__) console.error('[Flow] lifecycle function error:', err);
       clearTimeout(timer);
       resolve(fallback);
     }

@@ -32,7 +32,7 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
       // const userCred = await firebaseAuth.signInWithEmail(email, password);
       dispatch(login({ uid: '12345', email: email }));
     } catch (error: any) {
-      console.error('Login error:', error.message || error);
+      if (__DEV__) console.error('Login error:', error.message || error);
     }
   };
 

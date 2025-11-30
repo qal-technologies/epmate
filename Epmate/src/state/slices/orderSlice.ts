@@ -23,6 +23,7 @@ interface OrderState {
   locationData: LocationData;
   paymentData: PaymentData | null;
   orderStatus: OrderStatus;
+  isSearching: boolean;
 }
 
 const initialState: OrderState = {
@@ -35,6 +36,7 @@ const initialState: OrderState = {
   },
   paymentData: null,
   orderStatus: 'idle',
+  isSearching: false,
 };
 
 const orderSlice = createSlice( {
@@ -65,6 +67,10 @@ const orderSlice = createSlice( {
       state.orderStatus = action.payload;
     },
 
+    setIsSearching: (state, action: PayloadAction<boolean>) => {
+      state.isSearching = action.payload;
+    },
+
     // Legacy action for compatibility with existing code
     updateCurrent: ( state, action: PayloadAction<{ current: any; }> ) => {
       const { current } = action.payload;
@@ -91,6 +97,7 @@ const orderSlice = createSlice( {
       };
       state.paymentData = null;
       state.orderStatus = 'idle';
+      state.isSearching = false;
     },
   },
 } );
@@ -104,6 +111,7 @@ export const {
   updateCurrent,
   clearOrder,
   setServiceType,
+  setIsSearching,
 } = orderSlice.actions;
 
 export default orderSlice.reducer;

@@ -31,7 +31,7 @@ const LocationPermissionModal: React.FC<Props> = ({ visible, onDismiss }) => {
       setIsGranted(true);
       return;
     }
-    console.log('Location permissions denied.');
+    if (__DEV__) console.log('Location permissions denied.');
     onDismiss();
   };
 

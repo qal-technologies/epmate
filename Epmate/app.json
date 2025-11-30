@@ -6,27 +6,47 @@
     "orientation": "portrait",
     "icon": "./assets/images/logo.png",
     "userInterfaceStyle": "light",
-    "backgroundColor": "#30AF70",
+    "backgroundColor": "#ffffff",
     "description": "Epmate - Your Ultimate Emergency Companion App",
+    "category": "PRODUCTIVITY",
+    "keywords": ["helper", "errands", "delivery", "tasks"],
+    "supportUrl": "https://yourwebsite.com/support",
+    "copyright": "© 2025 Epmate Inc.",
     "splash": {
       "image": "./assets/images/logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#30AF70",
       "name": "Epmate"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.epmate.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "We need your location to connect you with nearby helpers",
+        "NSLocationAlwaysUsageDescription": "We track your location to show helper arrival and ensure safety",
+        "NSCameraUsageDescription": "Take photos for task verification",
+        "NSMicrophoneUsageDescription": "Voice calls with helpers"
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/logo.png",
-        "backgroundColor": "#30AF70"
+        "backgroundColor": "#ffffff"
       },
-      "package": "com.epmate"
+      "package": "com.epmate",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "CAMERA",
+        "RECORD_AUDIO"
+      ]
     },
+    "privacyPolicy": "https://yourwebsite.com/privacy",
+    "termsOfService": "https://yourwebsite.com/terms",
+
     "web": {
       "favicon": "./assets/images/logoBold.jpg",
       "themeColor": "#30AF70"

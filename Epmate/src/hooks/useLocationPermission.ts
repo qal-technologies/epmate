@@ -11,7 +11,7 @@ export const useLocationPermission = async () => {
         setPermissionGranted(true);
         return;
       }
-      console.log('Location permissions denied.');
+      if (__DEV__) console.log('Location permissions denied.');
     };
     checkPermission();
   }, []);

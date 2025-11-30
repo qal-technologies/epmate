@@ -11,6 +11,7 @@ import {
   MaterialIcons,
 } from '@expo/vector-icons';
 import AuthBtn from '../../../../components/AuthButton';
+import ModalBackButton from 'components/ModalBackButton';
 import type { HelperData } from 'hooks/useHelpers';
 import { updateOrderStatus } from 'state/slices/orderSlice';
 import { useDispatch, useSelector } from 'react-redux';
@@ -40,7 +41,7 @@ const CompletePaymentScreen: React.FC<Props> = ( { navigation } ) => {
   useEffect( () => {
     if ( !paymentData ) {
       Alert.alert( 'Invalid Access', 'Please confirm your order first' );
-      navigation.navigate( 'MainDrawer' );
+      navigation.replace( 'MainDrawer' );
     }
   }, [ paymentData, navigation ] );
 
@@ -49,32 +50,12 @@ const CompletePaymentScreen: React.FC<Props> = ( { navigation } ) => {
     dispatch( updateOrderStatus( 'processing' ) );
 
     // Navigate without params - paymentID is now part of state
-    navigation.navigate( 'ProcessingPayment' );
+    navigation.replace( 'ProcessingPayment' );
   };
 
   return (
     <SafeAreaView style={ styles.container }>
-      <View style={ styles.header }>
-        <TouchableRipple
-          onPress={ () => navigation.goBack() }
-          style={ {
-            width: 40,
-            height: 40,
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: 10,
-            borderRadius: '50%',
-            backgroundColor: theme.colors.primaryTrans,
-          } }
-        >
-          <MaterialIcons
-            name="arrow-back"
-            size={ 22 }
-            color={ theme.colors.text }
-          />
-        </TouchableRipple>
-        <Text style={ styles.headerTitle }>Complete Your Payment</Text>
-      </View>
+        <ModalBackButton onPress={ () => navigation.goBack() } withTitle title='Complete Your Payment'/>
 
 
       <ScrollView>

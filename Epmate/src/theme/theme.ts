@@ -1,12 +1,15 @@
 export const theme = {
   colors: {
     primary: '#30AF70',
-    primaryTrans: '#30AF7020',
+    primaryTrans: '#30AF701a',
     secondary: '#FFFFFF',
     background: '#F6F6F6',
     text: '#000000',
     placeholder: '#BDBDBD',
-    accent:'orange'
+    accent: 'orange',
+    red: "red",
+    gray: "gray",
+    black: "black",
   },
   fonts: {
     regular: 'Agrandir-Regular',

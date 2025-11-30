@@ -20,56 +20,56 @@ import { setCurrentService } from 'state/slices/orderSlice';
 import { theme } from 'theme/theme';
 
 interface Props {
-  onServiceSelect: () => void;
   isSearching: boolean;
+  onServiceSelect: () => void;
 }
 
-const ServiceSelectionModal: React.FC<Props> = ( {
-  onServiceSelect,
+const ServiceSelectionModal: React.FC<Props> = ({
   isSearching,
-} ) => {
+  onServiceSelect,
+}) => {
   const services: {
     name: string;
     icon: IconProps | string;
     serviceKey: string;
   }[] = [
-      { name: 'Errands & Delivery', icon: 'briefcase', serviceKey: 'errand' },
-      { name: 'House Chores', icon: 'broom', serviceKey: 'chores' },
-      { name: 'Cooking', icon: 'chef-hat', serviceKey: 'cooking' },
+      {name: 'Errands & Delivery', icon: 'briefcase', serviceKey: 'errand'},
+      {name: 'House Chores', icon: 'broom', serviceKey: 'chores'},
+      {name: 'Cooking', icon: 'chef-hat', serviceKey: 'cooking'},
       {
         name: 'Home Repairs & Technical Help',
         icon: 'tools',
         serviceKey: 'repairs',
       },
-      { name: 'Projects & Assignments', icon: 'pen', serviceKey: 'projects' },
+      {name: 'Projects & Assignments', icon: 'pen', serviceKey: 'projects'},
     ];
 
-  const [ selectedService, setSelectedService ] = useState( '' );
+  const [selectedService, setSelectedService] = useState('');
   const dispatch = useDispatch();
 
   const handleSelectClick = async () => {
-    // when we create more function we add them here:
-    if ( selectedService ) {
+    if(selectedService) {
       const selectedServiceObj = services.find(
         service => service.name === selectedService,
       );
 
-      if ( selectedServiceObj ) {
-        if ( selectedServiceObj.serviceKey != 'errand' ) {
-          Alert.alert( 'Coming soon...', 'Please select another option' );
+      if(selectedServiceObj) {
+        if(selectedServiceObj.serviceKey != 'errand') {
+          Alert.alert('Coming soon...', 'Please select another option');
         } else {
-          dispatch( setCurrentService( selectedServiceObj.serviceKey ) );
+          dispatch(setCurrentService(selectedServiceObj.serviceKey));
           onServiceSelect();
         }
       }
     }
   };
+
   return (
     <ScrollView
-      style={ [ styles.container, isSearching && { display: 'none' } ] }
-      contentContainerStyle={ {
+      style={styles.container}
+      contentContainerStyle={{
         paddingBottom: 20,
-      } }
+      }}
     >
       <Text style={ styles.title }>What do you need help with today?</Text>
 
@@ -124,8 +124,9 @@ const styles = StyleSheet.create( {
     paddingTop: 30,
     borderStartStartRadius: 20,
     borderStartEndRadius: 20,
-    maxHeight: Dimensions.get( 'screen' ).height / 1.9,
+    maxHeight: Dimensions.get('screen').height / 1.95,
     backgroundColor: theme.colors.secondary,
+    width: '100%',
   },
   title: {
     fontSize: 24,

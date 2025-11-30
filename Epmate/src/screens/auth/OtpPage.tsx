@@ -83,7 +83,7 @@ const OTPScreen: React.FC<OTPScreenProp> = ( {
             return existingUsers.includes( mobile );
         } catch ( error )
         {
-            console.error( 'Error checking user:', error );
+            if (__DEV__) console.error( 'Error checking user:', error );
             return false;
         }
     };
@@ -141,7 +141,7 @@ const OTPScreen: React.FC<OTPScreenProp> = ( {
             }, 400 );
         } catch ( error: any )
         {
-            console.error( 'Error verifying OTP:', error.message || error );
+            if (__DEV__) console.error( 'Error verifying OTP:', error.message || error );
             setLoading( false );
         }
     };

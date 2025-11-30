@@ -46,12 +46,12 @@ const NotificationPermissionModal: React.FC<Props> = ({
         }
         setIsGranted(true);
       } else {
-        console.log('Notification permissions denied.');
+        if (__DEV__) console.log('Notification permissions denied.');
       }
 
       onDismiss();
     } catch (e) {
-      console.log('Notification Error:', e);
+      if (__DEV__) console.log('Notification Error:', e);
     }
   };
 

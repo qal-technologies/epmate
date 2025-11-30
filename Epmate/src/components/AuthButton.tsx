@@ -5,16 +5,19 @@ import {
   type ButtonProps,
   ActivityIndicator,
 } from 'react-native-paper';
-import { theme } from '../theme/theme';
-import type { StyleProps } from 'react-native-reanimated';
-import { MaterialIcons } from '@expo/vector-icons';
-import type { IconProps } from '@expo/vector-icons/build/createIconSet';
+import {theme} from '../theme/theme';
+import type {StyleProps} from 'react-native-reanimated';
+import {MaterialIcons} from '@expo/vector-icons';
+import type {IconProps} from '@expo/vector-icons/build/createIconSet';
 
 type Props = {
   btnText: string;
   btnMode?: 'contained' | 'outlined';
   btnStyle: 'solid' | 'border';
   rounded?: boolean;
+  txtColor?: string;
+  buttonColor?: string;
+  bdColor?: string;
   onClick: () => void;
   style?: StyleProps | {};
   mv?: boolean;
@@ -24,7 +27,7 @@ type Props = {
   loadingText?: string;
   type?: 'error' | 'success' | 'warning' | 'default';
 };
-const AuthBtn: React.FC<Props> = ( {
+const AuthBtn: React.FC<Props> = ({
   btnText,
   btnMode,
   btnStyle = 'solid',
@@ -37,32 +40,35 @@ const AuthBtn: React.FC<Props> = ( {
   loading,
   loadingText,
   type,
-} ) => {
+  buttonColor,
+  txtColor,
+  bdColor,
+}) => {
   const textColor = {
-    solid: disabled || loading ? '#454545' : theme.colors.secondary,
-    border: disabled || loading ? '#454545' : type == 'error' ? 'red' : theme.colors.primary,
+    solid: txtColor ? txtColor : disabled || loading ? '#454545' : theme.colors.secondary,
+    border: txtColor ? txtColor : disabled || loading ? '#454545' : type == 'error' ? 'red' : theme.colors.primary,
   };
 
   const btnColor = {
-    border: disabled || loading ? '#c9c9c9' : theme.colors.secondary,
-    solid: disabled || loading ? '#c9c9c9' : type == 'error' ? 'red' : theme.colors.primary,
+    border: buttonColor ? buttonColor : disabled || loading ? '#c9c9c9' : theme.colors.secondary,
+    solid: buttonColor ? buttonColor : disabled || loading ? '#c9c9c9' : type == 'error' ? 'red' : theme.colors.primary,
   };
 
   const border = {
     border: {
-      borderColor: disabled || loading ? '#c9c9c9' : type == 'error' ? 'red' : theme.colors.primary,
+      borderColor: bdColor ? bdColor : disabled || loading ? '#c9c9c9' : type == 'error' ? 'red' : theme.colors.primary,
     },
     solid: {
-      borderColor: 'transparent',
+      borderColor: bdColor ? bdColor : 'transparent',
     },
   };
 
   return (
     <Button
-      mode={ btnMode }
-      textColor={ textColor[ btnStyle ] }
-      buttonColor={ btnColor[ btnStyle ] }
-      style={ [
+      mode={btnMode}
+      textColor={textColor[btnStyle]}
+      buttonColor={btnColor[btnStyle]}
+      style={[
         {
           borderRadius: rounded ? 50 : 12,
           marginVertical: mv ? 16 : 0,
@@ -71,23 +77,23 @@ const AuthBtn: React.FC<Props> = ( {
           padding: 3,
           borderWidth: 1,
           borderStyle: 'solid',
-          borderColor: border[ btnStyle ].borderColor,
+          borderColor: border[btnStyle].borderColor,
           alignSelf: 'center'
         },
 
         disabled && {
           cursor: 'auto',
         },
-        { ...style },
-      ] }
-      onPress={ onClick }
-      disabled={ !!loading || !!disabled }
+        {...style},
+      ]}
+      onPress={onClick}
+      disabled={!!loading || !!disabled}
     >
-      { !loading
-        ? <>{ icon && <MaterialIcons name={ icon as any } style={ { marginRight: 10 } } /> } { btnText }</>
+      {!loading
+        ? <>{icon && <MaterialIcons name={icon as any} style={{marginRight: 10}} />} {btnText}</>
         : loadingText || (
-          <ActivityIndicator size={ 'small' } color={ textColor[ btnStyle ] } />
-        ) }
+          <ActivityIndicator size={'small'} color={textColor[btnStyle]} />
+        )}
     </Button>
   );
 };

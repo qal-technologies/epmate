@@ -34,10 +34,20 @@ export type AuthStackParamList = {
 
 export type RootStackParamList = {
   MainDrawer: undefined;
+  
+  // Service Flow Screens (Fullscreen)
+  ServiceTypeSelection: undefined;
+  LocationInput: undefined;
+  HelperSelection: undefined;
+  
+  // Payment Flow Screens (Already fullscreen)
   ConfirmOrder: undefined;
   ProcessingPayment: undefined;
   CompletePayment: undefined;
+  
+  // Utility Screens (Already fullscreen)
   CallPage: undefined;
   LiveTracking: undefined;
+  
   Auth: undefined;
 };

@@ -55,7 +55,7 @@ const SignupScreen: React.FC<Props> = ( { navigation } ) => {
         setLoading( false );
       }, 4000 );
     } catch ( error: any ) {
-      console.error( 'Signup error:', error.message || error );
+      if (__DEV__) console.error( 'Signup error:', error.message || error );
       setLoading( false );
     }
   };

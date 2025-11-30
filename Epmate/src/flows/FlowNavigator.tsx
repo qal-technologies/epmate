@@ -404,7 +404,7 @@ const FlowNavigator: React.FC = () => {
   
   // Get active flows directly from registry
   const parents = flowRegistry.getRoots();
-  console.log('[FlowNavigator] Roots:', parents.map(p => p.id));
+  if (__DEV__) console.log('[FlowNavigator] Roots:', parents.map(p => p.id));
   
   const activeFlows = parents
     .map((p: any) => ({
@@ -413,10 +413,10 @@ const FlowNavigator: React.FC = () => {
     }))
     .filter(a => a.activeNode);
 
-  console.log('[FlowNavigator] Active flows:', activeFlows.map(a => ({ parent: a.parentNode?.id, child: a.activeNode?.id })));
+  if (__DEV__) console.log('[FlowNavigator] Active flows:', activeFlows.map(a => ({ parent: a.parentNode?.id, child: a.activeNode?.id })));
 
   if (activeFlows.length === 0) {
-    console.log('[FlowNavigator] No active flows, returning null');
+    if (__DEV__) console.log('[FlowNavigator] No active flows, returning null');
     return null;
   }
 

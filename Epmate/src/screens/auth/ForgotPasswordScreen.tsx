@@ -48,7 +48,7 @@ const ForgotPasswordScreen: React.FC = () => {
       Alert.alert('Password reset email sent!');
       navigation.navigate('Login');
     } catch (error: any) {
-      console.error('Error sending reset email:', error.message || error);
+      if (__DEV__) console.error('Error sending reset email:', error.message || error);
     } finally {
       setSending(false);
     }
@@ -71,7 +71,7 @@ const ForgotPasswordScreen: React.FC = () => {
       //   Alert.alert('No user is logged in.');
       // }
     } catch (error: any) {
-      console.error('Error updating password:', error.message || error);
+      if (__DEV__) console.error('Error updating password:', error.message || error);
     } finally {
       setUpdating(false);
     }

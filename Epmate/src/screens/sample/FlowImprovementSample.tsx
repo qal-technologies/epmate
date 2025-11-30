@@ -12,16 +12,16 @@ const FlowImprovementSample = () => {
   
   // Debug: Log when component mounts
   React.useEffect(() => {
-    console.log('[FlowImprovementSample] Component mounted');
+    if (__DEV__) console.log('[FlowImprovementSample] Component mounted');
   }, []);
   
   // Open first child after components mount
   React.useEffect(() => {
-    console.log('[FlowImprovementSample] Attempting to open first child...');
+    if (__DEV__) console.log('[FlowImprovementSample] Attempting to open first child...');
     const timer = setTimeout(() => {
       open('improvementFlow', 'stateTest')
-        .then(result => console.log('[FlowImprovementSample] Open result:', result))
-        .catch(e => console.log('[FlowImprovementSample] Open failed:', e));
+        .then(result => { if (__DEV__) console.log('[FlowImprovementSample] Open result:', result); })
+        .catch(e => { if (__DEV__) console.log('[FlowImprovementSample] Open failed:', e); });
     }, 500);
     return () => clearTimeout(timer);
   }, [open]);

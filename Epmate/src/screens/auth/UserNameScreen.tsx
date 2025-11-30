@@ -43,7 +43,7 @@ const UserNameScreen: React.FC<UserNameScreenProps> = ({
         navigation.navigate('Role');
       }
     } catch (error: any) {
-      console.error('Error saving name:', error.message || error);
+      if (__DEV__) console.error('Error saving name:', error.message || error);
     }
   };
 

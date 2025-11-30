@@ -1,29 +1,70 @@
-import {Text, ActivityIndicator} from "react-native-paper";
-import {StyleSheet, TouchableOpacity} from "react-native";
+import React from 'react';
+import {Text} from "react-native-paper";
+import {StyleSheet, TouchableOpacity, View} from "react-native";
 import {MaterialIcons} from "@expo/vector-icons";
+import {useNavigation} from '@react-navigation/native';
+import {theme} from '../theme/theme';
 
 type ButtonTypes = {
     withTitle?: boolean;
     titleOnly?: boolean;
+    withBg?: boolean;
     title?: string;
-    onPress: () => void;
-    size?: number
+    onPress?: () => void;
+    size?: number;
+    color?: string;
 };
 
-const BackButton: React.FC<ButtonTypes> = ({onPress, title, titleOnly, withTitle, size}) => {
+const ModalBackButton: React.FC<ButtonTypes> = ({
+    onPress,
+    title,
+    titleOnly,
+    withTitle,
+    withBg = true,
+    size = 22,
+    color = theme.colors.text
+}) => {
+    const navigation = useNavigation<any>();
+
+    const handlePress = onPress || (() => navigation.goBack());
+
     return (
-        <TouchableOpacity onPress={onPress} style={styles.container}>
-            {!titleOnly && <MaterialIcons name="arrow-back" size={size || 16}/>}
-            {withTitle || titleOnly && title && <Text>{title}</Text>}
-        </TouchableOpacity>
+
+        <View style={styles.wrapper}>
+            <TouchableOpacity onPress={handlePress} style={[styles.button, withBg && {backgroundColor: theme.colors.primaryTrans} ]}>
+                {!titleOnly && <MaterialIcons name="arrow-back" size={size} color={color} />}
+            </TouchableOpacity>
+            {(withTitle || titleOnly) && title && <Text style={[styles.title, {color, fontSize: size + 2}]}>{title}</Text>}
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
+    wrapper: {
+        width: 'auto',
+        // flex:1,
+        marginBottom: 20,
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        flexDirection: 'row',
+        gap: 20,
+        marginTop:10,
+    },
+    button: {
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center',
         gap: 8,
-    }
-})
-export default BackButton;
+        backgroundColor: 'transparent',
+        borderRadius: 70,
+        padding: 6,
+        width: 36,
+        height: 36
+    },
+    title: {
+        fontSize: 25,
+        fontWeight: 'bold',
+    },
+});
+
+export default ModalBackButton;

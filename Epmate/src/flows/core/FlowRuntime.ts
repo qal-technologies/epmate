@@ -38,7 +38,7 @@ function notify(nodeId: string, event: string, payload?: any) {
     try {
       cb({ event, payload });
     } catch (err) {
-      console.error('[Flow] listener error:', err);
+      if(__DEV__) console.error('[Flow] listener error:', err);
     }
   }
 }
@@ -46,7 +46,7 @@ function notify(nodeId: string, event: string, payload?: any) {
 function safeGetNode(id: string): FlowNode | null {
   const n = flowRegistry.getNode(id);
   if (!n) {
-    console.warn(`[Flow] Node "${id}" not found in registry.`);
+    if (__DEV__) console.warn(`[Flow] Node "${id}" not found in registry.`);
     return null;
   }
   return n;
@@ -155,7 +155,7 @@ async function handleAtEnd(parentNode: FlowNode, opts?: FlowCreateOptions) {
       }
       return true;
     } catch (err) {
-      console.warn('[Flow] atEnd function threw', err);
+      if (__DEV__) console.warn('[Flow] atEnd function threw', err);
       return false;
     }
   }

@@ -1,11 +1,10 @@
 // navigation/AppNavigator.tsx
-import React, { useState } from 'react';
+import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import HomeScreen from '../screens/main/HomeScreen';
 import ProfileScreen from '../screens/main/ProfileScreen';
-import PickupDelivery from '../screens/main/PickupDelivery';
 import TaskCompletionScreen from '../screens/main/pages/Tasks/TaskCompletionScreen';
 import RatingScreen from '../screens/main/pages/RatingScreen';
 import IssueScreen from '../screens/main/IssueScreen';
@@ -13,16 +12,14 @@ import PaymentScreen from '../screens/main/pages/PaymentScreen';
 import MyTasksScreen from '../screens/main/pages/Tasks/MyTasksScreen';
 import SafetyScreen from '../screens/main/SafetyScreen';
 import CustomDrawerContent from './CustomDrawerContent';
-import { HomeStackParamList, MainTabParamList, DrawerParamList, RootStackParamList } from './types';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { MaterialIcons } from '@expo/vector-icons';
-import ErrandsDeliveryModal from '../screens/main/services/errands/ErrandsDeliveryModal';
+import {HomeStackParamList, MainTabParamList, DrawerParamList, RootStackParamList} from './types';
+import {MaterialIcons} from '@expo/vector-icons';
 import ConfirmOrderScreen from '../screens/main/services/payment/ConfirmOrderScreen';
 import ProcessingPaymentScreen from '../screens/main/services/payment/ProcessingPaymentScreen';
 import CompletePaymentScreen from '../screens/main/services/payment/CompletePaymentScreen';
-import SearchingHelpersModal from '../screens/main/services/utils/SearchingHelpersModal';
-import HelperListModal from '../screens/main/HelperListModal';
-import ServiceSelectionModal from '../screens/main/ServiceSelectionModal';
+import ServiceTypeSelectionScreen from '../screens/main/services/ServiceTypeSelectionScreen';
+import LocationInputScreen from '../screens/main/services/LocationInputScreen';
+import HelperSelectionScreen from '../screens/main/services/HelperSelectionScreen';
 import { theme } from 'theme/theme';
 import CallPage from 'screens/main/utils/CallPage';
 import LiveTracking from 'screens/main/utils/LiveTracking';
@@ -34,87 +31,16 @@ const Drawer = createDrawerNavigator<DrawerParamList>();
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 
 const HomeStack: React.FC = () => {
-  const [ isSearching, setIsSearching ] = useState( false );
-  const [ showLocationModal, setShowLocationModal ] = useState( false );
-  const [ showErrandModal, setShowErrandModal ] = useState( false );
-  const [ showHelperListModal, setShowHelperListModal ] = useState( false );
-
   StatusBar.setBarStyle( 'dark-content' );
   StatusBar.setBackgroundColor( 'transparent' );
 
   return (
-    <>
-      <Stack.Navigator screenOptions={ { headerShown: false } }>
-
-      <Stack.Screen name="Main">
-          { ( props: NativeStackScreenProps<HomeStackParamList, 'Home'> ) => (
-          <>
-            <HomeScreen
-                { ...( props as any ) }
-                isSearching={ isSearching }
-            />
-            <ServiceSelectionModal
-                isSearching={ isSearching }
-                onServiceSelect={ () => setShowErrandModal( true ) }
-            />
-
-              { ( showErrandModal ) && (
-              <ErrandsDeliveryModal
-                  visible={ showErrandModal }
-                  onDismiss={ () => {
-                    setShowErrandModal( false );
-                    setShowLocationModal( true );
-                  } }
-              />
-              ) }
-
-              { ( showLocationModal ) && (
-              <PickupDelivery
-                  visible={ showLocationModal }
-                  onDismiss={ () => {
-                    setShowLocationModal( false );
-                    setIsSearching( true );
-                  } }
-              />
-              ) }
-              { isSearching && (
-              <SearchingHelpersModal
-                  visible={ isSearching }
-                  onHelpersFound={ () => {
-                    setIsSearching( false );
-                    setShowHelperListModal( true );
-                  } }
-              />
-              ) }
-              { showHelperListModal && (
-              <HelperListModal
-                  visible={ showHelperListModal }
-                  onDismiss={ () => {
-                    setShowHelperListModal( false );
-                    // Navigate to ConfirmOrder in RootStack
-                    props.navigation.navigate( 'ConfirmOrder' as any );
-                  } }
-              />
-              ) }
-          </>
-          ) }
-      </Stack.Screen>
-
-      <Stack.Screen
-        name="TaskCompletion"
-          component={ TaskCompletionScreen as React.ComponentType<any> }
-      />
-
-      <Stack.Screen
-        name="Rating"
-          component={ RatingScreen as React.ComponentType<any> }
-      />
-      <Stack.Screen
-        name="Issue"
-          component={ IssueScreen as React.ComponentType<any> }
-      />
+    <Stack.Navigator screenOptions={{headerShown: false}}>
+      <Stack.Screen name="Home" component={HomeScreen} />
+      <Stack.Screen name="TaskCompletion" component={TaskCompletionScreen as React.ComponentType<any>} />
+      <Stack.Screen name="Rating" component={RatingScreen as React.ComponentType<any>} />
+      <Stack.Screen name="Issue" component={IssueScreen as React.ComponentType<any>} />
     </Stack.Navigator>
-    </>
   );
 };
 
@@ -212,9 +138,17 @@ const AppNavigator: React.FC = () => {
     <RootStack.Navigator screenOptions={ { headerShown: false } }>
       <RootStack.Screen name="MainDrawer" component={ DrawerNavigator } />
 
+      {/* Service Flow Screens */}
+      <RootStack.Screen name="ServiceTypeSelection" component={ServiceTypeSelectionScreen as React.ComponentType<any>} />
+      <RootStack.Screen name="LocationInput" component={LocationInputScreen as React.ComponentType<any>} />
+      <RootStack.Screen name="HelperSelection" component={HelperSelectionScreen as React.ComponentType<any>} />
+
+      {/* Payment Flow Screens */}
       <RootStack.Screen name="ConfirmOrder" component={ ConfirmOrderScreen as React.ComponentType<any> } />
       <RootStack.Screen name="ProcessingPayment" component={ ProcessingPaymentScreen as React.ComponentType<any> } />
       <RootStack.Screen name="CompletePayment" component={ CompletePaymentScreen as React.ComponentType<any> } />
+
+      {/* Utility Screens */}
       <RootStack.Screen name="CallPage" component={ CallPage as React.ComponentType<any> } />
       <RootStack.Screen name="LiveTracking" component={ LiveTracking as React.ComponentType<any> } />
     </RootStack.Navigator>

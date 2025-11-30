@@ -9,7 +9,7 @@ export function useFlowState(scope?: string) {
   const targetScope = scope || context.parentId || context.flowId;
 
   if (!targetScope) {
-    console.warn('[useFlowState] No scope provided and could not auto-detect from context.');
+    if (__DEV__) console.warn('[useFlowState] No scope provided and could not auto-detect from context.');
   }
 
   const get = (key?: string) => {

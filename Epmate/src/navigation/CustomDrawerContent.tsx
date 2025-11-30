@@ -57,7 +57,7 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = props =>
   {
     // TODO: Add RegisterHelper screen to navigator
     // props.navigation.navigate('RegisterHelper');
-    console.warn('RegisterHelper screen not implemented yet');
+    if (__DEV__) console.warn('RegisterHelper screen not implemented yet');
   };
 
 
@@ -72,7 +72,7 @@ const CustomDrawerContent: React.FC<DrawerContentComponentProps> = props =>
             gap: 15,
             justifyContent: 'flex-start',
           }}
-          onPress={() => props.navigation.navigate('Profile')}
+          onPress={() => props.navigation.navigate('Profile' as any)}
         >
           <Avatar.Icon
             size={60}
