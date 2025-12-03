@@ -1,6 +1,8 @@
 import { flowRegistry, FlowNode } from './FlowRegistry';
-import { FlowState, SetStateOptions, FlowStateValue, FlowCreateOptions, AtEndConfig } from '../types';
+import {FlowState as FlowStateType, SetStateOptions, FlowStateValue, FlowCreateOptions, AtEndConfig} from '../types';
 import { makeId, inferParent, runWithTimeout } from '../utils';
+import {clear as clearState} from './state/FlowStateManager';
+import './state/FlowStorage'; // Register MMKV adapter
 
 /* ---------------- runtime maps ----------------- */
 const stackMap: Map<string, string[]> = new Map();
@@ -9,7 +11,7 @@ const openingMap: Map<string, boolean> = new Map();
 const switchingMap: Map<string, boolean> = new Map();
 const draggingMap: Map<string, boolean> = new Map();
 const animationMap: Map<string, boolean> = new Map();
-const stateMap: Map<string, FlowState> = new Map();
+const lockedMap: Map<string, boolean> = new Map();
 const listeners: Map<string, Set<(...args: any[]) => void>> = new Map();
 
 /* -------------------- Internal helpers -------------------- */
@@ -21,14 +23,7 @@ export function ensureRuntime(parentId: string) {
   if (!switchingMap.has(parentId)) switchingMap.set(parentId, false);
   if (!draggingMap.has(parentId)) draggingMap.set(parentId, false);
   if (!animationMap.has(parentId)) animationMap.set(parentId, false);
-  if (!stateMap.has(parentId)) {
-    stateMap.set(parentId, {
-      __categories: {},
-      __secure: {},
-      __temp: {},
-      __scoped: {},
-    });
-  }
+  if(!lockedMap.has(parentId)) lockedMap.set(parentId, false);
 }
 
 function notify(nodeId: string, event: string, payload?: any) {
@@ -124,7 +119,9 @@ function cleanupAndUnregister(
   draggingMap.delete(parentId);
   animationMap.delete(parentId);
   listeners.delete(parentId);
-  if (resetStateFlag) stateMap.delete(parentId);
+  if(resetStateFlag) {
+    clearState(parentId);
+  }
   if (unregisterFlag) flowRegistry.unregisterNode(parentId);
 }
 
@@ -231,31 +228,37 @@ export async function open(
 
   ensureRuntime(parentName);
 
+  if(lockedMap.get(parentName)) return false;
+  lockedMap.set(parentName, true);
+
   const currentId = getCurrentActiveChildId(parentName);
   const currentNode = currentId ? safeGetNode(currentId) : null;
 
   try {
-    if (currentNode && currentNode.id !== child.id) {
+    if(currentNode && currentNode.id !== child.id) {
       switchingMap.set(parentName, true);
-      notify(parentName, 'switching:start', { from: currentNode.id, to: child.id });
+      notify(parentName, 'switching:start', {from: currentNode.id, to: child.id});
       const ok = await runOnSwitching(currentNode, 'forward', lifecycleTimeoutMs);
       switchingMap.set(parentName, false);
-      if (!ok) return false;
+      if(!ok) return false;
     }
 
     openingMap.set(parentName, true);
-    notify(parentName, 'opening:start', { to: child.id, from: currentNode?.id ?? null });
-    const okOpen = await runOnOpen(child, { from: 'parent', opener }, lifecycleTimeoutMs);
+    notify(parentName, 'opening:start', {to: child.id, from: currentNode?.id ?? null});
+    const okOpen = await runOnOpen(child, {from: 'parent', opener}, lifecycleTimeoutMs);
     openingMap.set(parentName, false);
-    if (!okOpen) return false;
+    if(!okOpen) return false;
 
     pushChildOntoStack(parentName, child.id);
-    notify(parentName, 'open', { to: child.id, from: currentNode?.id ?? null });
+    notify(parentName, 'open', {to: child.id, from: currentNode?.id ?? null});
     return true;
-  } catch (err) {
+  } catch(err) {
+    if(__DEV__) console.error('[FlowRuntime] open failed', err);
     switchingMap.set(parentName, false);
     openingMap.set(parentName, false);
     return false;
+  } finally {
+    lockedMap.set(parentName, false);
   }
 }
 
@@ -265,17 +268,24 @@ export async function close(parentName: string) {
   if (!parent) return false;
   
   ensureRuntime(parentName);
-  const stack = stackMap.get(parentName) ?? [];
-  for (const childId of [...stack].reverse()) {
-    const node = safeGetNode(childId);
-    try {
-      node?.props?.onClose?.();
-    } catch (err) {}
+  if(lockedMap.get(parentName)) return false;
+  lockedMap.set(parentName, true);
+
+  try {
+    const stack = stackMap.get(parentName) ?? [];
+    for(const childId of [...stack].reverse()) {
+      const node = safeGetNode(childId);
+      try {
+        node?.props?.onClose?.();
+      } catch(err) { }
+    }
+    stackMap.set(parentName, []);
+    activeMap.set(parentName, null);
+    notify(parentName, 'close', null);
+    return true;
+  } finally {
+    lockedMap.set(parentName, false);
   }
-  stackMap.set(parentName, []);
-  activeMap.set(parentName, null);
-  notify(parentName, 'close', null);
-  return true;
 }
 
 export async function next(
@@ -296,36 +306,43 @@ export async function next(
     return false;
   }
 
-  const currId = getCurrentActiveChildId(parentName);
-  if (!currId) return open(parentName, children[0].name, undefined, opts);
+  if(lockedMap.get(parentName)) return false;
+  lockedMap.set(parentName, true);
 
-  const idx = children.findIndex(c => c.id === currId);
-  if (idx < 0) return open(parentName, children[0].name, undefined, opts);
+  try {
+    const currId = getCurrentActiveChildId(parentName);
+    if(!currId) return open(parentName, children[0].name, undefined, opts);
 
-  const nextIdx = idx + 1;
-  if (nextIdx >= children.length) {
-    const handled = await handleAtEnd(parent, opts);
-    if (handled) return true;
-    if (parent.parentId) return next(parent.parentId, opts);
-    return false;
+    const idx = children.findIndex(c => c.id === currId);
+    if(idx < 0) return open(parentName, children[0].name, undefined, opts);
+
+    const nextIdx = idx + 1;
+    if(nextIdx >= children.length) {
+      const handled = await handleAtEnd(parent, opts);
+      if(handled) return true;
+      if(parent.parentId) return next(parent.parentId, opts);
+      return false;
+    }
+
+    const currNode = safeGetNode(currId)!;
+    const nextNode = children[nextIdx];
+
+    switchingMap.set(parentName, true);
+    const okSwitch = await runOnSwitching(currNode, 'forward', lifecycleTimeoutMs);
+    switchingMap.set(parentName, false);
+    if(!okSwitch) return false;
+
+    openingMap.set(parentName, true);
+    const okOpen = await runOnOpen(nextNode, {from: 'sibling', opener: currId}, lifecycleTimeoutMs);
+    openingMap.set(parentName, false);
+    if(!okOpen) return false;
+
+    pushChildOntoStack(parentName, nextNode.id);
+    notify(parentName, 'next', {to: nextNode.id, from: currId});
+    return true;
+  } finally {
+    lockedMap.set(parentName, false);
   }
-
-  const currNode = safeGetNode(currId)!;
-  const nextNode = children[nextIdx];
-
-  switchingMap.set(parentName, true);
-  const okSwitch = await runOnSwitching(currNode, 'forward', lifecycleTimeoutMs);
-  switchingMap.set(parentName, false);
-  if (!okSwitch) return false;
-
-  openingMap.set(parentName, true);
-  const okOpen = await runOnOpen(nextNode, { from: 'sibling', opener: currId }, lifecycleTimeoutMs);
-  openingMap.set(parentName, false);
-  if (!okOpen) return false;
-
-  pushChildOntoStack(parentName, nextNode.id);
-  notify(parentName, 'next', { to: nextNode.id, from: currId });
-  return true;
 }
 
 export async function prev(
@@ -340,23 +357,30 @@ export async function prev(
   const parent = flowRegistry.getNode(parentName);
   if (!parent) return false;
 
-  const currId = getCurrentActiveChildId(parentName);
-  if (!currId) return false;
+  if(lockedMap.get(parentName)) return false;
+  lockedMap.set(parentName, true);
 
-  const currNode = safeGetNode(currId)!;
+  try {
+    const currId = getCurrentActiveChildId(parentName);
+    if(!currId) return false;
 
-  switchingMap.set(parentName, true);
-  const okSwitch = await runOnSwitching(currNode, 'backward', lifecycleTimeoutMs);
-  switchingMap.set(parentName, false);
-  if (!okSwitch) return false;
+    const currNode = safeGetNode(currId)!;
 
-  const popped = popChildFromStack(parentName);
-  if (!popped) {
-    if (parent.parentId) return prev(parent.parentId, opts);
-    return false;
+    switchingMap.set(parentName, true);
+    const okSwitch = await runOnSwitching(currNode, 'backward', lifecycleTimeoutMs);
+    switchingMap.set(parentName, false);
+    if(!okSwitch) return false;
+
+    const popped = popChildFromStack(parentName);
+    if(!popped) {
+      if(parent.parentId) return prev(parent.parentId, opts);
+      return false;
+    }
+    notify(parentName, 'prev', {to: popped, from: currId});
+    return true;
+  } finally {
+    lockedMap.set(parentName, false);
   }
-  notify(parentName, 'prev', { to: popped, from: currId });
-  return true;
 }
 
 export async function goTo(parentName: string, ...pathSegments: string[]) {
@@ -368,99 +392,41 @@ export async function goTo(parentName: string, ...pathSegments: string[]) {
   const parent = flowRegistry.getNode(parentName);
   if (!parent) return false;
 
-  // ... (simplified path resolution logic for brevity, can copy full logic if needed)
-  let candidateId: string | null = null;
-  const dotted = pathSegments.join('.');
-  const direct = `${parentName}.${dotted}`;
-  if (flowRegistry.getNode(direct)) candidateId = direct;
-  else if (flowRegistry.getNode(dotted)) candidateId = dotted;
-  
-  if (!candidateId) return false;
-  const target = safeGetNode(candidateId);
-  if (!target) return false;
+  if(lockedMap.get(parentName)) return false;
+  lockedMap.set(parentName, true);
 
-  const current = getCurrentActiveChildId(parentName);
-  if (current) {
-    const currNode = safeGetNode(current)!;
-    switchingMap.set(parentName, true);
-    const okSwitch = await runOnSwitching(currNode, 'forward', 8000);
-    switchingMap.set(parentName, false);
-    if (!okSwitch) return false;
-  }
-  
-  openingMap.set(parentName, true);
-  const okOpen = await runOnOpen(target, { from: 'goTo', opener: current ?? undefined }, 8000);
-  openingMap.set(parentName, false);
-  if (!okOpen) return false;
+  try {
+    // ... (simplified path resolution logic for brevity, can copy full logic if needed)
+    let candidateId: string | null = null;
+    const dotted = pathSegments.join('.');
+    const direct = `${parentName}.${dotted}`;
+    if(flowRegistry.getNode(direct)) candidateId = direct;
+    else if(flowRegistry.getNode(dotted)) candidateId = dotted;
 
-  pushChildOntoStack(parentName, target.id);
-  notify(parentName, 'goTo', { to: target.id });
-  return true;
-}
+    if(!candidateId) return false;
+    const target = safeGetNode(candidateId);
+    if(!target) return false;
 
-/* -------------------- State API -------------------- */
-
-export function getFlowState(scope: string) {
-  ensureRuntime(scope);
-  return stateMap.get(scope) || {};
-}
-
-export function setFlowState(scope: string, newState: any, options?: SetStateOptions) {
-  ensureRuntime(scope);
-  const current = stateMap.get(scope)!;
-  
-  if (options?.category) {
-    if (!current.__categories) current.__categories = {};
-    current.__categories[options.category] = {
-      ...(current.__categories[options.category] || {}),
-      ...newState,
-    };
-  } else if (options?.secureKey) {
-    // Mock secure
-    if (!current.__secure) current.__secure = {};
-    for (const k in newState) {
-      current.__secure[k] = { value: newState[k] };
+    const current = getCurrentActiveChildId(parentName);
+    if(current) {
+      const currNode = safeGetNode(current)!;
+      switchingMap.set(parentName, true);
+      const okSwitch = await runOnSwitching(currNode, 'forward', 8000);
+      switchingMap.set(parentName, false);
+      if(!okSwitch) return false;
     }
-  } else if (options?.temporary) {
-    if (!current.__temp) current.__temp = {};
-    Object.assign(current.__temp, newState);
-  } else if (options?.scope) {
-    if (!current.__scoped) current.__scoped = {};
-    for (const k in newState) {
-      current[k] = newState[k];
-      current.__scoped[k] = options.scope;
-    }
-  } else {
-    Object.assign(current, newState);
+
+    openingMap.set(parentName, true);
+    const okOpen = await runOnOpen(target, {from: 'goTo', opener: current ?? undefined}, 8000);
+    openingMap.set(parentName, false);
+    if(!okOpen) return false;
+
+    pushChildOntoStack(parentName, target.id);
+    notify(parentName, 'goTo', {to: target.id});
+    return true;
+  } finally {
+    lockedMap.set(parentName, false);
   }
-  
-  stateMap.set(scope, current);
-  notify(scope, 'state', newState);
-}
-
-export function getCat(scope: string, category: string, key?: string) {
-  ensureRuntime(scope);
-  const s = stateMap.get(scope);
-  const cat = s?.__categories?.[category];
-  if (!cat) return undefined;
-  return key ? cat[key] : cat;
-}
-
-export function setCat(scope: string, category: string, newState: any) {
-  setFlowState(scope, newState, { category });
-}
-
-export function secure(scope: string, key: string, value: any, secureKey: string) {
-  setFlowState(scope, { [key]: value }, { secureKey });
-}
-
-export function getSecure(scope: string, key: string, secureKey: string) {
-  ensureRuntime(scope);
-  const s = stateMap.get(scope);
-  const sec = s?.__secure?.[key];
-  if (!sec) return undefined;
-  // Mock decryption
-  return sec.value;
 }
 
 /* -------------------- Runtime Hook -------------------- */
@@ -519,7 +485,7 @@ export function onDragEnd(parentName: string) {
   notify(parentName, 'dragEnd', null);
 }
 
-export function onAnimationComplete(parentName: string, isAnimating: boolean) {
+export function notifyAnimationComplete (parentName: string, isAnimating: boolean) {
   ensureRuntime(parentName);
   animationMap.set(parentName, isAnimating);
   notify(parentName, 'animating', { isAnimating });
@@ -533,7 +499,7 @@ export function useFlowRuntime() {
     getMom,
     onDragUpdate,
     onDragEnd,
-    onAnimationComplete,
+    notifyAnimationComplete,
     ensureRuntime,
   };
 }

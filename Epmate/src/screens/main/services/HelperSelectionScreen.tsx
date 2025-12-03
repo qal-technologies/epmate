@@ -227,8 +227,8 @@ const HelperSelectionScreen: React.FC = () => {
                             maxToRenderPerBatch={10}
                             removeClippedSubviews={true}
                             initialNumToRender={5}
-                            getItemLayout={(data, index) => ({
-                                length: 100, 
+                            getItemLayout={(index: any) => ({
+                                length: 100,
                                 offset: 100 * index,
                                 index,
                             })}

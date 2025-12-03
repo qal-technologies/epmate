@@ -1,7 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { MMKV } from 'react-native-mmkv';
-
-const storage = new MMKV({ id: 'flow-session-storage' });
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface FlowState {
   sharedData: Record<string, any>;
@@ -26,7 +24,10 @@ const flowSlice = createSlice({
       const { key, value, shared = true } = action.payload;
       if (shared) {
         state.sharedData[key] = value;
-        storage.set(`shared:${key}`, JSON.stringify(value)); // Persist to MMKV
+        // Persist to AsyncStorage (side effect)
+        AsyncStorage.setItem(`shared:${key}`, JSON.stringify(value)).catch(err =>
+          console.warn('[FlowSlice] Failed to persist state', err),
+        );
       }
     },
 
@@ -69,7 +70,9 @@ const flowSlice = createSlice({
     takeState: (state, action: PayloadAction<string>) => {
       const value = state.sharedData[action.payload];
       delete state.sharedData[action.payload];
-      storage.delete(`shared:${action.payload}`);
+      AsyncStorage.removeItem(`shared:${action.payload}`).catch(err =>
+        console.warn('[FlowSlice] Failed to remove state', err),
+      );
       return value;
     },
 
@@ -80,23 +83,33 @@ const flowSlice = createSlice({
   },
 });
 
-// Hydrate state from MMKV on app start
-export const hydrateState = () => (dispatch: any) => {
-  const keys = storage.getAllKeys();
-  keys.forEach(key => {
-    if (key.startsWith('shared:')) {
-      const value = storage.getString(key);
-      if (value) {
-        const cleanKey = key.replace('shared:', '');
-        dispatch(
-          flowSlice.actions.setState({
-            key: cleanKey,
-            value: JSON.parse(value),
-          }),
-        );
-      }
+// Hydrate state from AsyncStorage on app start
+export const hydrateState = () => async (dispatch: any) => {
+  try {
+    const keys = await AsyncStorage.getAllKeys();
+    const sharedKeys = keys.filter(k => k.startsWith('shared:'));
+
+    if(sharedKeys.length > 0) {
+      const pairs = await AsyncStorage.multiGet(sharedKeys);
+      pairs.forEach(([key, value]) => {
+        if(value) {
+          const cleanKey = key.replace('shared:', '');
+          try {
+            dispatch(
+              flowSlice.actions.setState({
+                key: cleanKey,
+                value: JSON.parse(value),
+              }),
+            );
+          } catch(e) {
+          // ignore parse error
+          }
+        }
+      });
     }
-  });
+  } catch(e) {
+    console.warn('[FlowSlice] Failed to hydrate state', e);
+  }
 };
 
 export default flowSlice;

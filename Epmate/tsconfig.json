@@ -16,7 +16,9 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": "./",
     "paths": {
-      "*": ["src/*"]
+      "*": ["src/*"],
+      "@flows/*": ["src/flows/*"],
+      "@flows": ["src/flows/index"]
     }
   },
  "include": ["**/*.ts", "**/*.tsx", "**/*.js"],

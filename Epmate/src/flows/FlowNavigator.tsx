@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, StyleSheet, Dimensions, ActivityIndicator, Modal } from 'react-native';
+import { View, StyleSheet, Dimensions, ActivityIndicator, Modal, Text, TouchableOpacity } from 'react-native';
 import { flowRegistry } from './core/FlowRegistry';
 import { useFlowRuntime } from './core/FlowRuntime';
 import { useFlowNav } from './hooks/useFlowNav';
+import { open } from './core/FlowRuntime';
 import { FlowProvider } from './core/FlowProvider';
 import Reanimated, {
   useSharedValue,
@@ -16,9 +17,64 @@ import BottomSheet, {
 } from '@gorhom/bottom-sheet';
 import { MaterialIcons } from '@expo/vector-icons';
 import { theme } from '../theme/theme';
-import { TouchableRipple, Text } from 'react-native-paper';
+import { TouchableRipple } from 'react-native-paper';
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
+/**
+ * @component FlowErrorBoundary
+ * @description
+ * A React Error Boundary component designed specifically for FlowUI.
+ * It catches JavaScript errors anywhere in the child component tree, logs them,
+ * and displays a fallback UI instead of crashing the entire application.
+ *
+ * @prop {React.ReactNode} children - The components to wrap.
+ * @prop {React.ReactNode} [fallback] - Optional custom fallback UI to display on error.
+ */
+class FlowErrorBoundary extends React.Component<
+  { children: React.ReactNode; fallback?: React.ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: React.ReactNode; fallback?: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    if (__DEV__) {
+      console.error('[FlowErrorBoundary] Caught error:', error, errorInfo);
+    }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      if (this.props.fallback) return this.props.fallback;
+      return (
+        <View style={styles.errorContainer}>
+          <MaterialIcons name="error-outline" size={48} color={theme.colors.red} />
+          <Text style={styles.errorTitle}>Something went wrong</Text>
+          <Text style={styles.errorMessage}>{this.state.error?.message}</Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => this.setState({ hasError: false, error: null })}
+          >
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+/**
+ * Helper function to convert abstract size strings to BottomSheet snap points.
+ * @param {string} [size] - The size descriptor ('full', 'half', 'bottom').
+ * @returns {string[]} An array of snap points (e.g., ['50%']).
+ */
 function sizeToSnapPoints(size?: string) {
   switch (size) {
     case 'full':
@@ -39,6 +95,12 @@ type FlowInjected = {
   flags: { opening: boolean; switching: boolean; dragging: boolean };
 };
 
+/**
+ * @component FlowChildWrapper
+ * @description
+ * Wraps a child component and injects the `flow` prop containing runtime API and state.
+ * This allows the child component to access flow context without explicit hooks if needed.
+ */
 const FlowChildWrapper: React.FC<{
   flow: FlowInjected;
   children: React.ReactNode;
@@ -47,6 +109,12 @@ const FlowChildWrapper: React.FC<{
   return React.cloneElement(children as React.ReactElement<any>, { flow });
 };
 
+/**
+ * @component OverlayPortal
+ * @description
+ * A container for rendering overlays (modals, bottom sheets) on top of other content.
+ * It uses absolute positioning and high z-index.
+ */
 const OverlayPortal: React.FC<{ children: React.ReactNode }> = React.memo(
   ({ children }) => {
     return (
@@ -57,6 +125,12 @@ const OverlayPortal: React.FC<{ children: React.ReactNode }> = React.memo(
   },
 );
 
+/**
+ * @component FullScreenPageWrapper
+ * @description
+ * Renders a flow step as a full-screen page with animations.
+ * Handles entry/exit animations (slide, fade, zoom) and header rendering.
+ */
 const FullScreenPageWrapper = React.memo(function FullScreenPageWrapper({
   parentId,
   childId,
@@ -80,13 +154,17 @@ const FullScreenPageWrapper = React.memo(function FullScreenPageWrapper({
     activityIndicator,
   } = childProps;
 
-  const opacity = useSharedValue(0);
+  const opacity = useSharedValue(0); 
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
   const scale = useSharedValue(1);
 
   React.useEffect(() => {
-    runtime.onAnimationComplete(parentId, true);
+    if (typeof runtime?.notifyAnimationComplete === 'function') {
+      runtime.notifyAnimationComplete(parentId, true);
+    } else {
+      if (__DEV__) console.warn('[FlowNavigator] notifyAnimationComplete is not a function', typeof runtime?.notifyAnimationComplete);
+    }
 
     switch (animationType) {
       case 'slideBottom':
@@ -117,11 +195,13 @@ const FullScreenPageWrapper = React.memo(function FullScreenPageWrapper({
     translateX.value = withSpring(0);
     translateY.value = withSpring(0);
     scale.value = withSpring(1, {}, () => {
-      runtime.onAnimationComplete(parentId, false);
+      if (typeof runtime?.notifyAnimationComplete === 'function') runtime.notifyAnimationComplete(parentId, false);
     });
 
     return () => {
-      runtime.onAnimationComplete(parentId, true);
+      if (typeof runtime?.notifyAnimationComplete === 'function') {
+        runtime.notifyAnimationComplete(parentId, true);
+      }
       switch (animationType) {
         case 'slideBottom':
           translateY.value = withSpring(SCREEN_HEIGHT);
@@ -140,7 +220,7 @@ const FullScreenPageWrapper = React.memo(function FullScreenPageWrapper({
           break;
       }
       opacity.value = withSpring(0, {}, () => {
-        runtime.onAnimationComplete(parentId, false);
+        if (typeof runtime?.notifyAnimationComplete === 'function') runtime.notifyAnimationComplete(parentId, false);
       });
     };
   }, [parentId, runtime, animationType, opacity, translateX, translateY]);
@@ -157,8 +237,7 @@ const FullScreenPageWrapper = React.memo(function FullScreenPageWrapper({
   const { opening, switching } = runtime.getFlags(parentId);
   const siblings = parentId ? flowRegistry.getChildren(parentId) : [];
   const isFirstChild = siblings.length > 0 ? siblings[0].id === childId : false;
-  const api = runtime;
-
+  
   const page = (
     <FlowProvider parentId={parentId} childId={childId} flowId={parentId}>
       <FlowChildWrapper
@@ -169,7 +248,9 @@ const FullScreenPageWrapper = React.memo(function FullScreenPageWrapper({
           flags: runtime.getFlags(parentId),
         }}
       >
-        {content}
+        <FlowErrorBoundary>
+           {content}
+        </FlowErrorBoundary>
       </FlowChildWrapper>
     </FlowProvider>
   );
@@ -217,6 +298,12 @@ const FullScreenPageWrapper = React.memo(function FullScreenPageWrapper({
   );
 });
 
+/**
+ * @component ModalBottomSheetWrapper
+ * @description
+ * Renders a flow step as a modal bottom sheet.
+ * Handles snap points, dragging, dismissal, and backdrop rendering.
+ */
 const ModalBottomSheetWrapper = React.memo(function ModalBottomSheetWrapper({
   parentId,
   childId,
@@ -254,7 +341,9 @@ const ModalBottomSheetWrapper = React.memo(function ModalBottomSheetWrapper({
   const onAnimate = React.useCallback(
     (fromIndex: number, toIndex: number) => {
       if (fromIndex !== toIndex) {
-        runtime.onAnimationComplete(parentId, true);
+        if (typeof runtime?.notifyAnimationComplete === 'function') {
+          runtime.notifyAnimationComplete(parentId, true);
+        }
       }
     },
     [parentId, runtime],
@@ -262,7 +351,9 @@ const ModalBottomSheetWrapper = React.memo(function ModalBottomSheetWrapper({
 
   const onChangeHandler = React.useCallback(
     (index: number) => {
-      runtime.onAnimationComplete(parentId, false);
+      if (typeof runtime?.notifyAnimationComplete === 'function') {
+        runtime.notifyAnimationComplete(parentId, false);
+      }
       if (index === -1) {
         nav.prev();
         return;
@@ -343,7 +434,9 @@ const ModalBottomSheetWrapper = React.memo(function ModalBottomSheetWrapper({
               flags: runtime.getFlags(parentId),
             }}
           >
-            {content}
+            <FlowErrorBoundary>
+              {content}
+            </FlowErrorBoundary>
           </FlowChildWrapper>
         </FlowProvider>
       </View>
@@ -374,7 +467,15 @@ const ModalBottomSheetWrapper = React.memo(function ModalBottomSheetWrapper({
   );
 });
 
-// FINAL FlowNavigator - Renders properly with controlled updates
+/**
+ * @component FlowNavigator
+ * @description
+ * The core component responsible for rendering active flows.
+ * It listens to the `FlowRegistry` and `FlowRuntime` to determine which flows are active
+ * and renders them using the appropriate wrapper (`FullScreenPageWrapper` or `ModalBottomSheetWrapper`).
+ *
+ * This component should typically be placed near the root of your application or flow container.
+ */
 const FlowNavigator: React.FC = () => {
   const runtime = useFlowRuntime();
   const [updateTrigger, setUpdateTrigger] = React.useState(0);
@@ -384,6 +485,18 @@ const FlowNavigator: React.FC = () => {
     const handleUpdate = () => {
       // Get current active IDs
       const parents = flowRegistry.getRoots();
+      
+      // Auto-initialization: If a root has no active child, open the first one
+      parents.forEach(p => {
+        if (!runtime.getActive(p.id)) {
+          const children = flowRegistry.getChildren(p.id);
+          if (children.length > 0) {
+            if (__DEV__) console.log(`[FlowNavigator] Auto-opening first child for ${p.id}: ${children[0].name}`);
+            open(p.id, children[0].name);
+          }
+        }
+      });
+
       const activeIds = parents
         .map(p => runtime.getActive(p.id)?.id)
         .filter(Boolean)
@@ -404,7 +517,7 @@ const FlowNavigator: React.FC = () => {
   
   // Get active flows directly from registry
   const parents = flowRegistry.getRoots();
-  if (__DEV__) console.log('[FlowNavigator] Roots:', parents.map(p => p.id));
+  if (__DEV__) console.log(`[FlowNavigator] Roots:`, parents.map(p => p.id));
   
   const activeFlows = parents
     .map((p: any) => ({
@@ -421,7 +534,10 @@ const FlowNavigator: React.FC = () => {
   }
 
   const rendered = activeFlows.map(({ parentNode, activeNode }) => {
-    if (!activeNode) return null;
+    if (!activeNode || !parentNode) {
+      if (__DEV__) console.warn('[FlowNavigator] Skipping flow with missing node', { parentNode: parentNode?.id, activeNode: activeNode?.id });
+      return null;
+    }
     
     const childProps = activeNode.props || {};
     const size = childProps.size || 'half';
@@ -469,14 +585,18 @@ const FlowNavigator: React.FC = () => {
           statusBarTranslucent
           animationType="none"
         >
-          {content}
+          <FlowErrorBoundary>
+             {content}
+          </FlowErrorBoundary>
         </Modal>
       );
     }
 
     return (
       <View key={activeNode.id} pointerEvents="auto" style={styles.overlaySlot}>
-        {content}
+        <FlowErrorBoundary>
+           {content}
+        </FlowErrorBoundary>
       </View>
     );
   });
@@ -520,13 +640,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent:'center',
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#e3e3e3',
     backgroundColor: 'transparent',
+    marginTop:35,
   },
   headerLeft: { width: 48, alignItems: 'flex-start', justifyContent: 'center' },
   headerCenter: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  headerRight: { width: 72, alignItems: 'flex-end', justifyContent: 'center' },
+  headerRight: { width: 72, alignItems: 'flex-start', justifyContent: 'center' },
   headerTitle: { fontSize: 18, fontWeight: '600' },
   headerAction: {
     padding: 8,
@@ -543,5 +665,35 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.2)',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#fff',
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginTop: 10,
+    marginBottom: 5,
+    color: theme.colors.red,
+  },
+  errorMessage: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  retryButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: theme.colors.primary,
+    borderRadius: 8,
+  },
+  retryText: {
+    color: '#fff',
+    fontWeight: '600',
   },
 });
