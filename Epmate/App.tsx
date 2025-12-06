@@ -9,7 +9,7 @@ import { NavigationContainer } from '@react-navigation/native';
 
 import { ErrorBoundary } from './src/components/ErrorBoundary';
 import { OfflineNotice } from './src/components/OfflineNotice';
-import MainFlow from './src/samples/MainFlow';
+import {MainFlow} from './src/samples/MainFlow';
 import MinimalFlowTest from './src/samples/MinimalFlowTest';
 
 const App = () => {

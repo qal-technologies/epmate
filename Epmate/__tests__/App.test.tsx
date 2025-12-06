@@ -4,6 +4,13 @@
 
 import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
+
+// Mock dependencies
+jest.mock('react-native-gesture-handler', () => {});
+jest.mock('@react-native-async-storage/async-storage', () =>
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock')
+);
+
 import App from '../App';
 
 test('renders correctly', async () => {

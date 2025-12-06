@@ -4,49 +4,58 @@ import { useFlow } from '../../flows';
 import { Text } from 'react-native-paper';
 
 
-const InternalNavSample: React.FC<{ flow?: any }> = ({ flow }) => (
-  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-    <Text>Internal Navigation Sample</Text>
-    <Button title="Set State and Go to Next" onPress={() => {
-      flow.api.setFlowState('onboarding', { from: 'step1' });
-      flow.api.next();
-    }} />
-  </View>
-);
-
-const StateDisplaySample: React.FC<{ flow?: any }> = ({ flow }) => {
-  const [state, setState] = React.useState<any>({});
-
-  React.useEffect(() => {
-    setState(flow.api.getFlowState('onboarding'));
-  }, [flow]);
+const InternalNavSample = () => {
+  const nav = useFlow().nav();
+  const state = useFlow().state();
 
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text>State from previous step:</Text>
-      <Text>{JSON.stringify(state)}</Text>
-      <Button title="Next" onPress={() => flow.api.next()} />
+      <Text>Internal Navigation Sample</Text>
+      <Button title="Set State and Go to Next" onPress={() => {
+        state.set('from', 'step1');
+        nav.next();
+      }} />
     </View>
   );
 };
 
-const NeighborNavSample: React.FC<{ flow?: any }> = ({ flow }) => (
-  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-    <Text>Neighbor Navigation Sample</Text>
-    <Button
-      title="Open Settings"
-      onPress={() => flow.api.open('settings', 'options')}
-    />
-  </View>
-);
+const StateDisplaySample = () => {
+  const nav = useFlow().nav();
+  const state = useFlow().state();
+  const from = state.get('from');
 
-const AutoNavSample: React.FC<{ flow?: any }> = ({ flow }) => {
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <Text>State from previous step:</Text>
+      <Text>{JSON.stringify({ from })}</Text>
+      <Button title="Next" onPress={() => nav.next()} />
+    </View>
+  );
+};
+
+const NeighborNavSample = () => {
+  const nav = useFlow().nav();
+  
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <Text>Neighbor Navigation Sample</Text>
+      <Button
+        title="Open Settings"
+        onPress={() => nav.open('settings')}
+      />
+    </View>
+  );
+};
+
+const AutoNavSample = () => {
+  const nav = useFlow().nav();
+
   React.useEffect(() => {
     const timer = setTimeout(() => {
-      flow.api.next();
+      nav.next();
     }, 2000);
     return () => clearTimeout(timer);
-  }, [flow]);
+  }, [nav]);
 
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -56,19 +65,21 @@ const AutoNavSample: React.FC<{ flow?: any }> = ({ flow }) => {
 };
 
 const AdvancedFlowSample = () => {
-  const Flow = useFlow().create();
+  const Flow = useFlow();
   
   return (
     <>
-      <Flow.Page name="onboarding">
-        <Flow.Page.FC name="step1" page={<InternalNavSample />} />
-        <Flow.Page.FC name="step2" page={<StateDisplaySample />} />
-        <Flow.Page.FC name="step3" page={<AutoNavSample />} />
-        <Flow.Page.FC name="step4" page={<NeighborNavSample />} />
-      </Flow.Page>
-      <Flow.Modal name="settings">
-        <Flow.Modal.FC name="options" page={<Text>Settings Page</Text>} />
-      </Flow.Modal>
+      <Flow.Parent name="onboarding">
+        <Flow.FC name="step1" page={<InternalNavSample />} />
+        <Flow.FC name="step2" page={<StateDisplaySample />} />
+        <Flow.FC name="step3" page={<AutoNavSample />} />
+        <Flow.FC name="step4" page={<NeighborNavSample />} />
+      </Flow.Parent>
+      
+      <Flow.Parent name="settings" type="modal">
+        <Flow.FC name="options" page={<Text>Settings Page</Text>} />
+      </Flow.Parent>
+      
       <Flow.Navigator />
     </>
   );

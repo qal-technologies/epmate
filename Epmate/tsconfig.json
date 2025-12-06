@@ -12,7 +12,7 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
-    "types": ["react", "react-native"],
+    "types": ["react", "react-native", "jest"],
     "forceConsistentCasingInFileNames": true,
     "baseUrl": "./",
     "paths": {

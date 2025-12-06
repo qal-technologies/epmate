@@ -45,19 +45,19 @@ export function ensureState(scope: string) {
         notify(scope, 'state', merged);
       }
     }).catch(err => {
-      console.warn('[FlowState] Async load failed', err);
+      if (__DEV__) console.warn('[FlowState] Async load failed', err);
     });
   }
 }
 
 /* -------------------- Public API -------------------- */
 
-export function getFlowState (scope: string) {
+export function getFlowState<T = any>(scope: string): T {
     ensureState(scope);
-    return stateMap.get(scope) || {};
+    return (stateMap.get(scope) || {}) as T;
 }
 
-export function setFlowState (scope: string, newState: any, options?: SetStateOptions) {
+export function setFlowState<T = any>(scope: string, newState: T, options?: SetStateOptions) {
     ensureState(scope);
     const current = stateMap.get(scope)!;
 
@@ -71,7 +71,7 @@ export function setFlowState (scope: string, newState: any, options?: SetStateOp
         // Mock secure
         if(!current.__secure) current.__secure = {};
         for(const k in newState) {
-            current.__secure[k] = {value: newState[k]};
+            current.__secure[k] = {value: (newState as any)[k]};
         }
     } else if(options?.temporary) {
         if(!current.__temp) current.__temp = {};
@@ -79,7 +79,7 @@ export function setFlowState (scope: string, newState: any, options?: SetStateOp
     } else if(options?.scope) {
         if(!current.__scoped) current.__scoped = {};
         for(const k in newState) {
-            current[k] = newState[k];
+            current[k] = (newState as any)[k];
             current.__scoped[k] = options.scope;
         }
     } else if(options?.shared) {
@@ -98,7 +98,7 @@ export function setFlowState (scope: string, newState: any, options?: SetStateOp
     notify(scope, 'state', newState);
 }
 
-export function take (scope: string, key: string) {
+export function take<T = any>(scope: string, key: string): T | undefined {
     ensureState(scope);
     const current = stateMap.get(scope)!;
 
@@ -128,14 +128,14 @@ export function take (scope: string, key: string) {
         notify(scope, 'state', {[key]: undefined});
     }
 
-    return val;
+    return val as T;
 }
 
-export function takeShared (key: string) {
-    return take('global', key);
+export function takeShared<T = any>(key: string): T | undefined {
+    return take<T>('global', key);
 }
 
-export function clear (scope: string, key?: string) {
+export function clear(scope: string, key?: string) {
     ensureState(scope);
     const current = stateMap.get(scope)!;
 
@@ -172,44 +172,44 @@ export function clear (scope: string, key?: string) {
     }
 }
 
-export function keep (scope: string, key: string, value: any) {
+export function keep<T = any>(scope: string, key: string, value: T) {
     setFlowState(scope, {[key]: value}, {temporary: true});
 }
 
-export function getCat (scope: string, category: string, key?: string) {
+export function getCat<T = any>(scope: string, category: string, key?: string): T | undefined {
     ensureState(scope);
     const s = stateMap.get(scope);
     const cat = s?.__categories?.[category];
     if(!cat) return undefined;
-    return key ? cat[key] : cat;
+    return (key ? cat[key] : cat) as T;
 }
 
-export function setCat (scope: string, category: string, newState: any) {
+export function setCat<T = any>(scope: string, category: string, newState: T) {
     setFlowState(scope, newState, {category});
 }
 
-export function secure (scope: string, key: string, value: any, secureKey: string) {
+export function secure<T = any>(scope: string, key: string, value: T, secureKey: string) {
     setFlowState(scope, {[key]: value}, {secureKey});
 }
 
-export function getSecure (scope: string, key: string, secureKey: string) {
+export function getSecure<T = any>(scope: string, key: string, secureKey: string): T | undefined {
     ensureState(scope);
     const s = stateMap.get(scope);
     const sec = s?.__secure?.[key];
     if(!sec) return undefined;
     // Mock decryption
-    return sec.value;
+    return sec.value as T;
 }
 
-export function setShared (key: string, value: any) {
+export function setShared<T = any>(key: string, value: T) {
     // Use a global scope for shared data
     setFlowState('global', {[key]: value}, {shared: true});
 }
 
-export function getShared (key: string) {
+export function getShared<T = any>(key: string): T | undefined {
     ensureState('global');
     const s = stateMap.get('global');
-    return s?.__shared?.[key];
+    return s?.__shared?.[key] as T;
 }
 
 export function onStateChange (scope: string, cb: (...args: any[]) => void) {
@@ -224,4 +224,38 @@ export function onStateChange (scope: string, cb: (...args: any[]) => void) {
             if(s.size === 0) listeners.delete(scope);
         }
     };
+}
+
+/**
+ * Cleans up temporary state for orphaned scopes.
+ * @param scopes - Array of scope IDs to clean up.
+ */
+export function cleanupTempState(scopes: string[]) {
+    scopes.forEach(scope => {
+        const current = stateMap.get(scope);
+        if (current) {
+            let changed = false;
+            // Clear temporary state
+            if (current.__temp && Object.keys(current.__temp).length > 0) {
+                current.__temp = {};
+                changed = true;
+            }
+            // Clear scoped state (sent to this child)
+            if (current.__scoped && Object.keys(current.__scoped).length > 0) {
+                current.__scoped = {};
+                changed = true;
+            }
+            
+            if (changed) {
+                stateMap.set(scope, current);
+                // We don't necessarily need to persist the cleanup of temp state if it wasn't persisted anyway,
+                // but it's good practice to keep memory clean.
+                // FlowStorage.save(scope, current); 
+                notify(scope, 'cleanup', null);
+            }
+        }
+    });
+    // if (__DEV__ && scopes.length > 0) {
+    //     console.log(`[FlowStateManager] Cleaned up temporary state for ${scopes.length} scopes`);
+    // }
 }

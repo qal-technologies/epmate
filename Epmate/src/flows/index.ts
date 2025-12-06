@@ -1,3 +1,4 @@
+import {useFlow} from './hooks/useFlow';
 export * from './types';
 export * from './core/FlowProvider';
 export * from './core/FlowRegistry';
@@ -5,4 +6,6 @@ export * from './core/FlowRuntime';
 export * from './hooks/useFlow';
 export * from './hooks/useFlowNav';
 export * from './hooks/useFlowState';
+export { FlowPack } from './FlowPack';
 export { default as FlowNavigator } from './FlowNavigator';
+export const Flow = useFlow();

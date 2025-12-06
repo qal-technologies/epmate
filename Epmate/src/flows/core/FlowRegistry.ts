@@ -2,9 +2,11 @@
    GLOBAL REGISTRY FOR ALL FLOWS
    - Tracks parents, children, nested structures
    - Allows navigation without React Context
+   - Supports synchronous registration for proper lifecycle
 */
 
-type FlowType = 'modal' | 'page' | 'child';
+import { FlowHierarchy } from './FlowHierarchy';
+import { FlowNode, FlowType, RegistrationState } from '../types';
 
 /**
  * @interface FlowNodeOptions
@@ -21,23 +23,6 @@ export interface FlowNodeOptions {
   parentId?: string | null;
   /** Arbitrary properties associated with the node */
   props?: any;
-}
-
-/**
- * @interface FlowNode
- * @description Represents a registered node in the flow tree.
- */
-export interface FlowNode {
-  id: string;
-  name: string;
-  type: FlowType;
-  parentId: string | null;
-  children: string[];
-  props: any;
-
-  // runtime states
-  isMounted: boolean;
-  activeIndex: number;
 }
 
 /**
@@ -70,7 +55,7 @@ class FlowRegistry {
   private constructor() {
     this.currentChild = {};
     this.parentOf = {};
-    if (__DEV__) console.log(`[FlowRegistry] Instance created: ${this.instanceId}`);
+
   }
 
   /**
@@ -92,12 +77,12 @@ class FlowRegistry {
    */
   public registerNode(options: FlowNodeOptions): FlowNode {
     const { id, name, type, parentId = null, props = {} } = options;
-    if (__DEV__) console.log(`[FlowRegistry:${this.instanceId}] Registering node: ${id}, type: ${type}, parent: ${parentId}`);
+
 
     // Check if node already exists FIRST - if so, merge and update it
     const existingNode = this.nodes.get(id);
     if (existingNode) {
-      if (__DEV__) console.log(`[FlowRegistry:${this.instanceId}] Updating existing node: ${id}`);
+
       // Merge props instead of replacing to preserve existing values
       existingNode.props = { ...existingNode.props, ...props };
       existingNode.name = name;
@@ -144,6 +129,8 @@ class FlowRegistry {
       props,
       isMounted: false,
       activeIndex: 0,
+      registrationState: 'registered',
+      registeredAt: Date.now(),
     };
 
     this.nodes.set(id, newNode);
@@ -163,7 +150,7 @@ class FlowRegistry {
     }
 
     this.notify();
-    if (__DEV__) console.log(`[FlowRegistry] Registered ${id}. Total nodes: ${this.nodes.size}`);
+
     return newNode;
   }
 
@@ -356,6 +343,10 @@ class FlowRegistry {
     this.listeners.forEach(cb => cb());
   }
 
+  public forceUpdate() {
+    this.notify();
+  }
+
   public getInstanceId() {
     return this.instanceId;
   }
@@ -366,6 +357,87 @@ class FlowRegistry {
    */
   public getRoots(): FlowNode[] {
     return Array.from(this.nodes.values()).filter(n => n.parentId === null);
+  }
+
+  /**
+   * Registers a node synchronously (for immediate registration needs)
+   * @param {FlowNodeOptions} options - The options for the new node.
+   * @returns {FlowNode} The registered node.
+   */
+  public registerNodeSync(options: FlowNodeOptions): FlowNode {
+    return this.registerNode(options);
+  }
+
+  /**
+   * Validates the entire registry hierarchy
+   * @returns Validation result
+   */
+  public validateHierarchy() {
+    const allNodes = Array.from(this.nodes.values());
+    return FlowHierarchy.validateHierarchy(allNodes);
+  }
+
+  /**
+   * Gets all nodes as an array
+   * @returns {FlowNode[]} All registered nodes
+   */
+  public getAllNodes(): FlowNode[] {
+    return Array.from(this.nodes.values());
+  }
+
+  /**
+   * Updates a node's registration state
+   * @param {string} id - The ID of the node.
+   * @param {RegistrationState} state - The new state.
+   */
+  public setRegistrationState(id: string, state: RegistrationState): void {
+    const node = this.nodes.get(id);
+    if (node) {
+      node.registrationState = state;
+      this.notify();
+    }
+  }
+
+  /**
+   * Gets a node's registration state
+   * @param {string} id - The ID of the node.
+   * @returns {RegistrationState | null} The registration state or null if node not found.
+   */
+  public getRegistrationState(id: string): RegistrationState | null {
+    const node = this.nodes.get(id);
+    return node ? node.registrationState : null;
+  }
+
+  /**
+   * Updates the properties of a registered node.
+   * Merges the new properties with the existing ones.
+   * 
+   * @param {string} id - The ID of the node to update.
+   * @param {Partial<any>} newProps - The new properties to merge.
+   * @returns {boolean} True if the node was found and updated, false otherwise.
+   */
+  public updateNodeProps(id: string, newProps: Partial<any>): boolean {
+    const node = this.nodes.get(id);
+    if (!node) {
+      if (__DEV__) console.warn(`[FlowRegistry] Cannot update props for unknown node: ${id}`);
+      return false;
+    }
+
+    // Merge props
+    node.props = { ...node.props, ...newProps };
+    
+    // Notify listeners to trigger re-renders
+    this.notify();
+    return true;
+  }
+
+  /**
+   * Prints a visual tree of the registry (for debugging)
+   * @returns {string} String representation of the tree
+   */
+  public printTree(): string {
+    const allNodes = Array.from(this.nodes.values());
+    return FlowHierarchy.printTree(allNodes);
   }
 }
 

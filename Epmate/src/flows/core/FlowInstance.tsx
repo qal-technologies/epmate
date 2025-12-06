@@ -24,7 +24,7 @@ import {
   getMom,
   onDragUpdate,
   onDragEnd,
-  onAnimationComplete,
+  notifyAnimationComplete,
   ensureRuntime,
 } from './FlowRuntime';
 
@@ -154,7 +154,7 @@ export function useFlow() {
     getMom,
     onDragUpdate,
     onDragEnd,
-    onAnimationComplete,
+    notifyAnimationComplete,
     __debug: {},
     state: useFlowState,
     nav: useFlowNav,
