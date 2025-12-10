@@ -64,8 +64,8 @@ const ServiceFlow = () => {
     return (
         <Flow.Parent name="Service" >
             <Flow.FC name="Welcome" page={<WelcomeScreen />} />
-            <Flow.FC name="StepTwo" page={<StepTwoScreen />} animationType='slideRight' noTitle />
-            <Flow.FC name="InfoModal" page={<InfoModal />} noTitle />
+            <Flow.FC name="StepTwo" page={<StepTwoScreen />} animationType='slideRight' noHeader />
+            <Flow.FC name="InfoModal" page={<InfoModal />} noHeader />
 
         </Flow.Parent>
     );

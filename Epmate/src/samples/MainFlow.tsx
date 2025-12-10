@@ -4,6 +4,7 @@ import {FlowKitchenSink} from './FlowKitchenSink';
 import {FlowDebugOverlay} from '../flows/FlowDebugOverlay';
 import {DashboardFlow} from './DashboardFlow';
 import {AuthFlow} from './AuthFlow';
+import FlowEnhancedTest from './FlowEnhancedTest';
 
 
 export const MainFlow = () => {
@@ -11,8 +12,9 @@ export const MainFlow = () => {
   return (
     <>
       <Flow.Navigator >
-        <AuthFlow />
+        <FlowEnhancedTest/>
         <FlowKitchenSink />
+        <AuthFlow />
         <DashboardFlow />
       </Flow.Navigator>
       <FlowDebugOverlay />

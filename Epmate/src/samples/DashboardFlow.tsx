@@ -14,7 +14,8 @@ const HomeScreen = () => {
 
   return (
     <View style={styles.screen}>
-      <Text style={styles.title}>Welcome, {username}!</Text>
+      
+      <Text style={styles.title}>Dashboard: Welcome, {username}!</Text>
       <Button title="Go to Settings" onPress={() => nav.open('SettingsFlow')} />
       <View style={styles.spacer} />
       <Button 
@@ -22,6 +23,9 @@ const HomeScreen = () => {
         color="red"
         onPress={() => nav.switchRoot('AuthPack')} 
       />
+      <View style={styles.spacer} />
+      <Button title="Switch to Kitchen Pack" onPress={() => nav.switchRoot('KitchenSinkPack')} />
+      
     </View>
   );
 };
@@ -44,7 +48,7 @@ const ProfileSettings = () => {
     
   return (
     <View style={styles.screen}>
-          <Text style={styles.title}>Profile Settings</Text>
+          <Text style={styles.title}>Dashboard Profile Settings</Text>
           <Text>Username: {username}</Text>
           <TextInput
               value={username}

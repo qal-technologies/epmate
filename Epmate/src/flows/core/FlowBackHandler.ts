@@ -110,7 +110,7 @@ export function useFlowBackHandler (
 
       // Navigate to previous child
       const success = await prev(parentId);
-      return success; // true = we handled it, false = let OS handle it
+      return success; 
     }
 
     return false;

@@ -1,0 +1,75 @@
+you didnt add a visited to cgetrActiveChild method and ther hidetab doesnt workk at pages that has it as true. the props like theme and background doesnt reflect immeditetly.
+the tab should woork with theme too.
+modal showing as modal is a must, make sure to implement the warning of a parent being a modal.
+because if a parent is a modal their would be no back page or underlying page behind,
+instead of using if active child is a modal or not, just create a registry navigation method, openTab, closeTab, that sets the hideTab (or right variable) in the registry.
+
+when a modal opens it calls the closeTab method and when a page shows calls the openTab. use the prop, hideTab during registry or rendering to knwo if to call open/closeTab.
+
+make this tab method accessible in the nav too, so dev can optionally open or close tab.
+
+this can work with hideOnScroll and other tab visibility features.
+
+Every things is a bit manageable, just that the back button doesnt go back well, the modal still doesnt show like a modal and the hideTab doesnt still work, both on a parent, pack and child level..
+
+the hideonscroll doesnt work too.
+
+make sideMounted tabs to stay symmetrically in the middle (if endSpace, add pace at the top and bottom and mkae the hight adjust to reflect this change).
+
+after this phase, we'll be immplementing the drawer navigator, all in type and can only be registered by pack too.
+remove all other types apart from tab/drawer from type prop of .Pack
+no parent, child, modal or the likes of it.
+
+Make sure everything is seemless, accomplished and no errors after.
+
+
+---------new prompt-------------
+1. auto opening using if, is not implemented or working yet (should work on all levels too) MUST WORK!!.
+2. Make restrictedIn/Out more strict and available even at pack level (should be the first to check, immediately after checking node availablity in all navigation method).
+3. Parent and child (.FC) nesting works fine now, but Pack nesting isnt compatible. make.
+4. All levels can use a type tab, so long as it has children greater than 1 (Pack, Parent or nested child [FC]).
+5. The modal doesnt still show like a modal and isnt draggable, so now lets make a new Flow.Modal, that is a seperate modular component outside FlowNavigator.tsx (same with full page - make them in different file so it's easy to maintain and make changes). Create a top-down custom modal that works well with dragging, dismissing and all modal props. create a new modalProp for it and all props only necessary for modal is added. Remove all unnecessary modal props existing in parent or fc and also make sure that .Modal can be nested too but add warning that all children (.FC) in a .Modal would be displayed as a modal and not full screen.
+Make sure all modal props works well with the custom modal and ui is heavily or directly dependent to the flowRegistry and any changes that occurs, both on props or the child or parent, reflects immediately.
+Modals can now exist without backPages (back would be black/white/containerBgColor depending), a modal doesnt necessarily need to hideTab anymore, except specified by the dev.
+6. Look into tab, make it compatible and able to work for all levels (but with a number of children check). Make sure that changes on the tab prop on nested children, rerenders the tab immediately. (Currently disappears after any changes occurs in it's prop or inner nested child).
+tab should work too with the theme on the registry ('dark' || 'light').
+7. For the theme, add more detailed theme styling (dark, light as objects taking in bgColor, text, and other accessible props internally for dark and light), this theme can be called in the child and the extra props (text, or any other theme style) and add to their texts or pages. --->> the theme accepts only text too ('dark' || 'light'), and the dark/light object too sould accept just text. if the dark:'white', light:'black' and not an object, set the color for only background, else make it available using parent/self getting and setting props to children. or self. Make the theme use the actual device theme by default, else specified otherwise (add a prop for that).
+8. after this phase, we'll be immplementing the drawer navigator too, add to types and all levels can make a drawer, so long as they pass the child check.
+9. Find a very efficient way to implement and test the hideOnScroll for the tab bar as the current algo and logic doeant work. make sure all ways/technique you use works on all platforms properly.(andriod, ios, web, pc).
+10. The header config doesnt work on direct parents's header (don't know why - tested and only Profile pages shows the header config and the bottom).
+11. do a full file/codebase debugging and look into all potential hiccups, errors, mismanaged state, badly implemented algorithm/logic, anything that'll make scaling or adding new features in the future hard, and always make sure to make eveyrhhing modular enough to ease editing and file corrections. Also make sure to make even longer functions modular and reusable.
+12. create more samples to test these changes and fixes.
+
+You'll not do all these fixes in one prompt reply.
+Take your time, map out phases or steps and make sure all steps must be implemented, analyzed to view the changes and correct any errors, before proceeding.
+If an error persist, return the initially existing workable code and start implementation again, till you fix it.
+
+
+
+
+------------feedback-------------
+1. make sure that the restricted alert is only shown when the exact page is being tried to be navigated to and not on registration.
+2. MOdals still shows as full pages (No use of modular components in the navigator).
+3. Header texts and tab background doesnt reflect the theme colors.
+the header text too should reflect the theme too.
+4. In all illustrations of state, use only own flow state mechanism.
+5. Add an optional title to the the restricted Message so dev can set both alert title and message string | {title?: string; message?: string;}
+6. Make sure that the restriction checck for also current child too (if the current Child changes to restrict out, or in, it automatically goes out (if restrictIn true)).
+7. Make sure to still register if (false) screens, incase they turn true, they can still be available in the registry. just block only for naviagtions.
+8. Add restriction check on close/previous and all navigation method.
+9. onOpen and onSwitching fucntion doesnt run .
+10, All the state get methods sould have an optional last param (just string, number, null, any ), this last param serves as placeholder and is returned if the fetched data is undefined or null or empty. if it's not set, return '', empty.
+11. Create a open/closeDrawer m=nav method just like the tab's and make it work well.
+12. open/CloseTab doesnt work anymore.
+13. create a state method that works like useState, set to that child alone and doesnt conflict if there's the same key already existing, this state clears immediately the child unmounts.
+14. make the drawer accept cutom trigger icon and any other icon can call it if the method is scroped.
+15. Let the drawer work with the iconStyle too and same goes with the tabSize, add a minimum, and add all the checks for the width of the drawer.
+16. Make sure that if a none existent page is being navigated to, it shows an error and return false
+17. make .fc also able to wrap it's nesting children, and make a check for page or children prop is true cannot be both and must be one.
+18, if initial is not set, choose the first child, no blank page.
+19. drawer can exist in tab and tab can exist in drawer, make it happen. can can layer on top of each other properly without interferring each other.
+20. If a drawer is inside a tab, detect it and add the appropriate props to the drawer to make it work well and also the floating opening button, they can have props to style it or a custom element. They can also call it using the nav methods. JUst make sure the drawer and tab can work with each other.
+21. Note, drawers overlays tabs (above tabs).
+22. Make .FC being able to determine their own navType (since they can register as parent if they're nexted and run all necessary things). they styould have their tab/drawerStyle too.
+23. make that the iconStyle works for both tabs and drawer.
+24. Check why the open/closeTAB works fine in kitchenSink sample but not in the enhancedTest and also the tab and ui update in enhancedTest sample works fine without hidding or refrehsing the whole ui, but doesnt in the sink sample.

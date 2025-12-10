@@ -53,13 +53,13 @@ const RadioBtn: React.FC<RadioProps> = ({
       {icon && (
         <View style={styles.iconView}>
           {iconPack == 'Awesome' ? (
-            <FontAwesome name={icon} size={20} color={'white'} />
+            <FontAwesome name={icon as any} size={20} color={'white'} />
           ) : iconPack == 'Community' ? (
-            <MaterialCommunityIcons name={icon} size={20} color={'white'} />
+            <MaterialCommunityIcons name={icon as any} size={20} color={'white'} />
           ) : iconPack == 'Ant' ? (
-            <AntDesign name={icon} size={20} color={'white'} />
+            <AntDesign name={icon as any} size={20} color={'white'} />
           ) : (
-            <MaterialIcons name={icon} size={20} color={'white'} />
+            <MaterialIcons name={icon as any} size={20} color={'white'} />
           )}
         </View>
       )}

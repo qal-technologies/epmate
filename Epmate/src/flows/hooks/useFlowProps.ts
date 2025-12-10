@@ -13,7 +13,12 @@ import {FlowBaseProps, FlowChildBaseProps, FlowChildProps} from '../types';
  * The generic type `T` is merged with the standard `FlowChildProps`.
  * This means you get intellisense for both standard props (like `title`, `name`) AND your custom props.
  * 
+ * **Cross-Pack Access:**
+ * Pass a `scope` parameter (supports dotted names like "PackName.ParentName.ChildName") 
+ * to read/write props of any node in the registry.
+ * 
  * @template T - The shape of your custom props. Defaults to `{}`.
+ * @param {string} [scope] - Optional scope ID for cross-pack access
  * @returns {object} An object containing:
  * - `props`: The current props (Standard Flow Props & T).
  * - `setProps`: A function to update the props.
@@ -24,15 +29,14 @@ import {FlowBaseProps, FlowChildBaseProps, FlowChildProps} from '../types';
  * const { props, setProps } = useFlowProps();
  * props.title; // Standard prop
  * 
- * // Typed usage
- * const { props, setProps } = useFlowProps<{ myCustomId: string }>();
- * props.myCustomId; // Custom prop
- * props.title; // Standard prop still available
+ * // Cross-pack access
+ * const { props, setProps } = useFlowProps('OtherPack.SomeParent');
  * ```
  */
-export function useFlowProps<T = {}> () {
+export function useFlowProps<T = {}> (scope?: string) {
     const context = useFlowContext();
-    const nodeId = context.flowId; // The ID of the current component (child or parent)
+    // Use provided scope or fall back to current context
+    const nodeId = scope || context.flowId;
 
     // Subscribe to registry updates to trigger re-renders
     const [_, setTick] = React.useState(0);
@@ -53,7 +57,7 @@ export function useFlowProps<T = {}> () {
 
     const setProps = React.useCallback((newProps: Partial<FlowChildProps & T>) => {
         if(!nodeId) {
-            // if (__DEV__) console.warn('[useFlowProps] No node ID found in context.');
+            if(__DEV__) console.warn('[useFlowProps] No node ID found in context.');
             return;
         }
         flowRegistry.updateNodeProps(nodeId, newProps);
@@ -121,22 +125,40 @@ export function useFlowParentProps<T = {}> (target: 'parent' | 'pack' = 'parent'
         return (node?.props || {}) as FlowBaseProps & T;
     }, [parentId, target, _]);
 
-    const setParentProps = React.useCallback((newProps: Partial<FlowBaseProps & T>) => {
+    const setParentProps = React.useCallback((newProps: Partial<FlowBaseProps & T>, to?: 'parent' | 'pack' | string) => {
         let targetId = parentId;
+        const resolvedTarget = to || target; // Use call-time target, or hook default
 
-        if(target === 'pack' && parentId) {
-            const node = flowRegistry.getNode(parentId);
-            if(node && node.parentId) {
-                targetId = node.parentId;
+        if(resolvedTarget === 'pack' && parentId) {
+            // Find the nearest Pack
+            // If parent is a Pack, use it? Or parent's parent?
+            // "pack" usually means the container pack.
+            // If current parent is regular page, we look up.
+            // We need a way to traverse up. FlowRegistry has getParentChain?
+            // But here we only have access to registry via import.
+            // Let's use flowRegistry.getParentChain(nodeId)
+            const chain = flowRegistry.getParentChain(context.childId || context.flowId || '');
+            const packParams = chain.find(n => n.type === 'pack');
+            if(packParams) {
+                targetId = packParams.id;
+            } else {
+                // Fallback to parent's parent if simple lookup
+                const node = flowRegistry.getNode(parentId);
+                if(node && node.parentId) {
+                    targetId = node.parentId;
+                }
             }
+        } else if(typeof resolvedTarget === 'string' && resolvedTarget !== 'parent' && resolvedTarget !== 'pack') {
+            // Explicit ID
+            targetId = resolvedTarget;
         }
 
         if(!targetId) {
-            // if (__DEV__) console.warn('[useFlowParentProps] No target ID found in context.');
+            if(__DEV__) console.warn('[useFlowParentProps] No target ID found in context.');
             return;
         }
         flowRegistry.updateNodeProps(targetId, newProps);
-    }, [parentId, target]);
+    }, [parentId, target, context.childId, context.flowId]);
 
     return {
         parentProps: getParentProps(),

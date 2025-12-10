@@ -1,5 +1,5 @@
 import React from 'react';
-import {View, StyleSheet, Dimensions, ActivityIndicator, Text, TouchableOpacity} from 'react-native';
+import {View, StyleSheet, Dimensions, ActivityIndicator, Text, TouchableOpacity, TextInput, StatusBar} from 'react-native';
 import {flowRegistry} from './core/FlowRegistry';
 import {useFlowRuntime} from './core/FlowRuntime';
 import {useFlowNav} from './hooks/useFlowNav';
@@ -9,7 +9,8 @@ import {useFlowBackHandler} from './core/FlowBackHandler';
 import Reanimated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
+  withTiming,
+  Easing,
 } from 'react-native-reanimated';
 
 import {
@@ -21,6 +22,8 @@ import {MaterialIcons} from '@expo/vector-icons';
 import {theme} from '../theme/theme';
 import {TouchableRipple} from 'react-native-paper';
 import {FlowTabWrapper} from './FlowTabWrapper';
+import {FlowDrawerWrapper} from './FlowDrawerWrapper';
+import useFlowTheme from './hooks/useFlowTheme';
 const {height: SCREEN_HEIGHT, width: SCREEN_WIDTH} = Dimensions.get('window');
 
 /**
@@ -110,6 +113,8 @@ const OverlayPortal: React.FC<{children: React.ReactNode;}> = React.memo(
 
 /**
  * @component FullScreenPageWrapper
+ * Renders a page with header and animations.
+ * Reads all props from registry for single source of truth.
  */
 const FullScreenPageWrapper = React.memo(function FullScreenPageWrapper ({
   parentId,
@@ -129,62 +134,127 @@ const FullScreenPageWrapper = React.memo(function FullScreenPageWrapper ({
   // Enable back handling for the root parent
   useFlowBackHandler(parentId);
 
+  // Get props from registry (single source of truth)
   const node = flowRegistry.getNode(childId);
   const childProps = node?.props || {};
   const {
-    animationType = 'fade',
-    title,
-    noTitle,
+    animationType,
+    noHeader = false,
     canGoBack = true,
     activityIndicator,
+    headerConfig = {},
+    isRestrictedIn,
   } = childProps;
 
-  const opacity = useSharedValue(0);
+  //Auto-exit when current child becomes restricted
+  React.useEffect(() => {
+    if(isRestrictedIn) {
+      if(__DEV__) console.log(`[Flow] Auto-exit: "${node?.name}" became restricted, navigating back`);
+      nav.prev();
+    }
+  }, [isRestrictedIn, nav, node?.name]);
+
+  // Get title from registry - prioritize child's title, then name
+  const displayTitle = flowRegistry.getActiveChildTitle(node?.parentId as any) || node?.props?.title || node?.name || '';
+
+  // Get theme from registry for reactive colors
+  const parentNode = flowRegistry.getNode(node?.parentId || parentId);
+  const flowTheme = parentNode?.props?.theme || node?.props?.theme || useFlowTheme().deviceTheme || 'light';
+  const themeColors = flowTheme === 'dark'
+    ? {bg: '#1a1a1a', text: '#ffffff', icon: '#cccccc'}
+    : {bg: '#ffffff', text: '#000000', icon: '#333333'};
+
+
+  // consolidate noHeader
+  const isNoHeader = noHeader;
+
+  const {
+    titlePosition = 'center',
+    headerStyle,
+    noBackBtn,
+    headerRight,
+    headerBottom,
+    transparent
+  } = headerConfig;
+
+  const opacity = useSharedValue(1);
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
   const scale = useSharedValue(1);
 
+  // Animation guard - only animate on first mount, not on state changes
+  const hasAnimated = React.useRef(false);
+  const prevChildId = React.useRef(childId);
+
+  // Animation timing config for natural movement
+  const animConfig = {
+    duration: 300,
+    easing: Easing.out(Easing.cubic),
+  };
+
   React.useEffect(() => {
+    // Only animate if child changed or first mount
+    const shouldAnimate = !hasAnimated.current || prevChildId.current !== childId;
+    prevChildId.current = childId;
+
+    if(!shouldAnimate) return;
+    hasAnimated.current = true;
+
     if(typeof runtime?.notifyAnimationComplete === 'function') {
       runtime.notifyAnimationComplete(parentId, true);
     }
 
+    // Set initial position based on animation type
     switch(animationType) {
       case 'slideBottom':
         translateY.value = SCREEN_HEIGHT;
+        opacity.value = 1;
         break;
       case 'slideTop':
         translateY.value = -SCREEN_HEIGHT;
+        opacity.value = 1;
         break;
       case 'slideLeft':
         translateX.value = -SCREEN_WIDTH;
+        opacity.value = 1;
         break;
       case 'slideRight':
         translateX.value = SCREEN_WIDTH;
+        opacity.value = 1;
         break;
       case 'zoom':
         scale.value = 0.3;
         opacity.value = 0;
         break;
-      case 'none':
-        break;
-      default:
+      case 'fade':
         opacity.value = 0;
+        break;
+      case 'none':
+        opacity.value = 1;
+        return; // No animation
+      default:
+        opacity.value = 1;
         break;
     }
 
-    opacity.value = withSpring(1);
-    translateX.value = withSpring(0);
-    translateY.value = withSpring(0);
-    scale.value = withSpring(1, {}, () => {
-      if(typeof runtime?.notifyAnimationComplete === 'function') runtime.notifyAnimationComplete(parentId, false);
+    // Animate to final position using timing (not spring)
+    opacity.value = withTiming(1, animConfig);
+    translateX.value = withTiming(0, animConfig);
+    translateY.value = withTiming(0, animConfig);
+    scale.value = withTiming(1, animConfig, () => {
+      if(typeof runtime?.notifyAnimationComplete === 'function') {
+        runtime.notifyAnimationComplete(parentId, false);
+      }
     });
+  }, [childId, parentId, runtime, animationType]);
 
-    return () => {
-      // Cleanup animation not strictly needed for mount/unmount in this architecture,
-      // but good for transitions if keys change.
-    };
-  }, [parentId, runtime, animationType, opacity, translateX, translateY]);
+  React.useEffect(() => {
+    if(node?.props?.hideTab == true) {
+      nav.closeTab();
+    } else {
+      nav.openTab();
+    }
+  }, [node?.props?.hideTab]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
@@ -199,8 +269,14 @@ const FullScreenPageWrapper = React.memo(function FullScreenPageWrapper ({
   const siblings = parentId ? flowRegistry.getChildren(parentId) : [];
   const isFirstChild = siblings.length > 0 ? siblings[0].id === childId : false;
 
+  // Check if parent is a tab or drawer navigation - those children don't show back button
+  const parentIsTabOrDrawer = parentNode?.props?.navType === 'tab' || parentNode?.props?.navType === 'drawer';
+
+  const showBack = canGoBack && !isFirstChild && !noBackBtn && !parentIsTabOrDrawer;
+
   const page = (
     <FlowProvider parentId={parentId} childId={childId} flowId={parentId}>
+      <StatusBar animated barStyle={flowTheme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={themeColors.bg || 'transparent'} />
       <FlowChildWrapper
         flow={{
           api: runtime,
@@ -216,6 +292,53 @@ const FullScreenPageWrapper = React.memo(function FullScreenPageWrapper ({
     </FlowProvider>
   );
 
+  const finalHeaderStyle = [
+    styles.header,
+    transparent && {position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, backgroundColor: 'transparent', borderBottomWidth: 0, marginTop: 35},
+    !transparent && {backgroundColor: background || themeColors.bg},
+  ] as any;
+
+  const headerContent = (
+    <View style={[finalHeaderStyle, headerStyle && {...headerStyle}, {flexDirection: 'column', alignItems: 'center', paddingBottom: 5}]}>
+      <View style={[{flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}, headerBottom && {paddingTop: 30}]}>
+        {/* LEFT */}
+        <View style={[styles.headerLeft, {flex: titlePosition === 'left' ? 0 : 1, alignItems: 'flex-start', }]}>
+          {showBack && (
+            <TouchableRipple onPress={() => nav.prev()}>
+              <View style={styles.headerAction}>
+                <MaterialIcons
+                  name="arrow-back"
+                  color={themeColors.icon}
+                  size={18}
+                />
+              </View>
+            </TouchableRipple>
+          )}
+        </View>
+
+        {/* CENTER */}
+        <View style={[styles.headerCenter, {
+          flex: 2,
+          alignItems: titlePosition === 'left' ? 'flex-start' : (titlePosition === 'right' ? 'flex-end' : 'center'),
+          paddingLeft: titlePosition === 'left' ? 10 : 0,
+          paddingBottom: headerBottom ? 5 : 0,
+        }]}>
+          <Text numberOfLines={1} style={[styles.headerTitle, {color: themeColors.text}]}>
+            {displayTitle}
+          </Text>
+        </View>
+
+        {/* RIGHT */}
+        <View style={[styles.headerRight, {flex: 1, alignItems: 'flex-end'}]}>
+          {headerRight}
+        </View>
+      </View>
+
+      {/* BOTTOM */}
+      {headerBottom && <View style={{width: '100%'}}>{headerBottom}</View>}
+    </View>
+  );
+
   return (
     <Reanimated.View
       pointerEvents="box-none"
@@ -225,29 +348,7 @@ const FullScreenPageWrapper = React.memo(function FullScreenPageWrapper ({
         animatedStyle,
       ]}
     >
-      {!noTitle && (
-        <View style={styles.header}>
-          {canGoBack && !isFirstChild && (
-            <View style={styles.headerRight}>
-              <TouchableRipple onPress={() => nav.prev()}>
-                <View style={styles.headerAction}>
-                  <MaterialIcons
-                    name="arrow-back"
-                    color={theme.colors.primary}
-                    size={18}
-                  />
-                </View>
-              </TouchableRipple>
-            </View>
-          )}
-
-          <View style={styles.headerCenter}>
-            <Text numberOfLines={1} style={styles.headerTitle}>
-              {title ?? node?.name ?? ''}
-            </Text>
-          </View>
-        </View>
-      )}
+      {!isNoHeader && headerContent}
 
       {page}
       {(opening || switching) && (
@@ -289,12 +390,41 @@ const ModalBottomSheetWrapper = React.memo(function ModalBottomSheetWrapper ({
   const childProps = node?.props || {};
   const {
     title = node?.name ?? '',
-    noTitle = false,
+    noHeader = false,
     topElement,
     activityIndicator,
     backdrop,
     withShadow,
+    headerConfig,
+    isRestrictedIn,
   } = childProps;
+
+  //Auto-exit when current child becomes restricted
+  React.useEffect(() => {
+    if(isRestrictedIn) {
+      if(__DEV__) console.log(`[Flow] Auto-exit: "${node?.name}" became restricted, navigating back`);
+      nav.prev();
+    }
+  }, [isRestrictedIn, nav, node?.name]);
+
+
+  // Get theme from registry for reactive colors
+  const parentNode = flowRegistry.getNode(node?.parentId || parentId);
+  const flowTheme = parentNode?.props?.theme || node?.props?.theme || 'light';
+  const themeColors = flowTheme === 'dark'
+    ? {bg: '#1a1a1a', text: '#ffffff', icon: '#cccccc'}
+    : {bg: '#ffffff', text: '#000000', icon: '#333333'};
+
+  // Extract headerConfig options
+  const {
+    titlePosition = 'center',
+    headerStyle,
+    noBackBtn = false,
+    headerRight: customHeaderRight,
+    headerBottom,
+    transparent = false,
+  } = headerConfig || {};
+
   const {opening, switching} = runtime.getFlags(parentId);
 
   const normalizedSnapPoints = React.useMemo(() => {
@@ -333,9 +463,18 @@ const ModalBottomSheetWrapper = React.memo(function ModalBottomSheetWrapper ({
     } catch(err) { }
   }, []);
 
+
   React.useEffect(() => {
     handlePresent();
   }, [handlePresent]);
+
+  React.useEffect(() => {
+    if(node?.props?.hideTab == true) {
+      nav.closeTab();
+    } else {
+      nav.openTab();
+    }
+  }, [node?.props?.hideTab]);
 
   const renderBackdrop = React.useCallback(
     (props: any) => {
@@ -357,7 +496,8 @@ const ModalBottomSheetWrapper = React.memo(function ModalBottomSheetWrapper ({
 
   const page = (
     <View style={{flex: 1}}>
-      {!noTitle && (
+      <StatusBar animated barStyle={flowTheme === 'dark' ? 'light-content' : 'dark-content'} backgroundColor={themeColors.bg || 'transparent'} />
+      {!noHeader && (
         <View
           style={[styles.header, {backgroundColor: background || '#fff'}]}
         >
@@ -444,6 +584,10 @@ const FlowNavigator: React.FC<{children?: React.ReactNode;}> = ({children}) => {
   const runtime = useFlowRuntime();
   const [tick, setTick] = React.useState(0);
 
+  // Track which children have been auto-opened (if=true or open=true)
+  // This prevents infinite loops - each child only auto-opens ONCE
+  const autoOpenedRef = React.useRef<Set<string>>(new Set());
+
   // Force re-render on registry changes
   React.useEffect(() => {
     const unsub = flowRegistry.subscribe(() => setTick(t => t + 1));
@@ -464,27 +608,31 @@ const FlowNavigator: React.FC<{children?: React.ReactNode;}> = ({children}) => {
     }
   }, [activeRootId, packs.length, runtime]);
 
-  // 2. Recursive Rendering Function
-  const renderFlow = (nodeId: string): React.ReactNode => {
+  // 2. Recursive Rendering Function - handles packs, parents, and children (unlimited nesting)
+  const renderFlow = (nodeId: string, depth: number = 0): React.ReactNode => {
     const node = flowRegistry.getNode(nodeId);
     if(!node) return null;
 
-    // --- LEAF NODE (Child/Page) ---
+    // --- LEAF NODE (Child/FC) ---
     if(node.type === 'child') {
-      // It's a leaf Page. Render it wrapped in FullScreenPageWrapper.
-      // We assume the parent is a standard parent logic-wise if it got here.
-      // BUT `FullScreenPageWrapper` uses `useFlowNav(parentId)`.
-      // `node.parentId` should be valid.
+      // Check if this child's content is a nested Parent
+      const pageContent = node.props?.page;
 
-      const theme = flowRegistry.getNode(node.parentId!)?.props?.theme || 'light';
-      const background = theme === 'dark' ? '#1a1a1a' : '#ffffff';
+      // Check if the page content contains a Flow.Parent
+      // by checking if it's a React element with type that has a displayName
+      const isNestedContainer =
+        pageContent &&
+        React.isValidElement(pageContent) &&
+        (pageContent.type as any)?.displayName?.includes('Flow');
+
+      const background = (flowRegistry.getNode(node.parentId!)?.props?.theme || 'light') === 'dark' ? '#1a1a1a' : '#ffffff';
 
       return (
         <FullScreenPageWrapper
           key={node.id}
           parentId={node.parentId!}
           childId={node.id}
-          content={node.props?.page ?? null}
+          content={pageContent ?? null}
           background={background}
           tick={tick}
         />
@@ -500,28 +648,61 @@ const FlowNavigator: React.FC<{children?: React.ReactNode;}> = ({children}) => {
       return null;
     }
 
-    // 2. Recursively render the active child content
-    const childContent = renderFlow(activeNode.id);
+    // 2. Recursively render the active child content (supports unlimited depth)
+    const childContent = renderFlow(activeNode.id, depth + 1);
 
-    // 3. Wrap the content based on THIS node's type/config
-    if(node.type === 'pack' && node.props.type === 'tab') {
-      // It's a Pack acting as a Tab Navigator
+    // 3. Check for navType (tab/drawer) - works on Pack AND Parent/FC
+    const childrenNodes = flowRegistry.getChildren(nodeId);
+    const navType = node.props?.navType ;
+
+    // Tab/Drawer requires at least 2 children, else fall back to stack
+    if(navType && childrenNodes.length >= 2) {
+      if(navType === 'tab') {
+        return (
+          <FlowTabWrapper
+            key={node.id}
+            parentId={node.id}
+            activeChildId={activeNode.id}
+            tabStyle={node.props?.tabStyle}
+            iconStyle={node.props?.iconStyle}
+            children={childContent}
+            tick={tick}
+          />
+        );
+      }
+      if(navType === 'drawer') {
+        return (
+          <FlowDrawerWrapper
+            key={node.id}
+            parentId={node.id}
+            activeChildId={activeNode.id}
+            drawerStyle={node.props?.drawerStyle}
+            children={childContent}
+            tick={tick}
+          />
+        );
+      }
+    }
+
+    // Handle Pack without navType (just a container)
+    if(node.type === 'pack') {
       return (
-        <FlowTabWrapper
-          key={node.id}
-          parentId={node.id}
-          activeChildId={activeNode.id}
-          tabStyle={node.props.tabStyle}
-          iconStyle={node.props.iconStyle}
-          children={childContent} // recursive content
-          tick={tick}
-        />
+        <View key={node.id} style={{flex: 1}}>
+          {childContent}
+        </View>
       );
     }
 
-    // Default: Just return the content (Pass-through for standard Packs and Parents)
-    // (Standard properties like `theme` are handled at the leaf or passed down, 
-    // but here we primarily handle layout wrapping like Tabs)
+    // Handle Parent (page type) - supports unlimited nesting
+    if(node.type === 'page') {
+      return (
+        <View key={node.id} style={{flex: 1}}>
+          {childContent}
+        </View>
+      );
+    }
+
+    // Default: Just return the content (Pass-through)
     return childContent;
   };
 
@@ -617,31 +798,88 @@ const FlowNavigator: React.FC<{children?: React.ReactNode;}> = ({children}) => {
     );
   });
 
-  // 5. Auto-Open Logic (Global)
+  // 5. Auto-Open Logic (Global & Pack Initialization)
   React.useEffect(() => {
-    // Check all active parents for children with 'open=true'
-    const activeParents = allNodes.filter(n => (n.type === 'pack' || n.type === 'page' || n.type === 'tab' || n.type === 'modal'));
-    activeParents.forEach(parent => {
-      // If parent is active in its own parent?
-      // Recursively check if the parent is part of the active chain?
-      // Check if parent ID is in `allActiveIds` (collected above)?
-      // If we use `allActiveIds`:
-      if(!allActiveIds.has(parent.id)) return;
 
-      const children = flowRegistry.getChildren(parent.id);
-      children.forEach(child => {
-        if(child.props.open && runtime.getActive(parent.id)?.id !== child.id) {
-          if(__DEV__) console.log(`[FlowNavigator] Auto-opening child: ${child.name}`);
-          open(parent.id, child.name);
+    const nodesAndParents = flowRegistry.getAllNodes();
+
+    nodesAndParents.forEach((node) => {
+      // --- Case A: Pack Initialization ---
+      const activeChild = runtime.getActive(node.id);
+
+      // Only init if:
+      // 1. It has an 'initial' prop
+      // 2. It has NO active child currently
+      // 3. It is part of the active hierarchy (activeRoot or child of active parent)
+      const isActiveOrRoot = node.id === activeRootId || runtime.getActive(node.parentId!)?.id === node.id;
+
+      if(!activeChild && node.props?.initial && isActiveOrRoot) {
+        // Double check it has children
+        const children = flowRegistry.getChildren(node.id);
+        if(children.length > 0) {
+          // Verify the initial child exists
+          // Using open() handles retrieval
+          if(__DEV__) console.log(`[FlowNavigator] Auto-initializing Pack '${node.id}' to '${node.props.initial}'`);
+          open(node.id, node.props.initial).catch(() => { });
         }
-      });
+      }
+
+      // --- Case B: autoOpen / open=true Logic ---
+      // Check children of this node for auto-open candidates
+
+      if(!isActiveOrRoot) return;
+
+      const children = flowRegistry.getChildren(node.id);
+
+      // First pass: Find children with if=true that should auto-open (ONLY ONCE)
+      for(const child of children) {
+        if(child.id === activeChild?.id) continue;
+
+        // Skip if already auto-opened (prevents infinite loop)
+        if(autoOpenedRef.current.has(child.id)) continue;
+
+        const ifCondition = child.props?.if;
+        const openProp = child.props?.open;
+
+        // If 'if' is explicitly true, auto-open this child immediately (ONCE)
+        if(ifCondition === true && openProp !== false) {
+          if(__DEV__) console.log(`[FlowNavigator] Auto-opening child (once): ${child.name} (if=true)`);
+          autoOpenedRef.current.add(child.id); // Mark as opened
+          open(node.id, child.name).catch(() => { });
+          return; // Exit after opening one
+        }
+      }
+
+      // Second pass: Check open=true candidates (only if no if=true was found)
+      const candidates = children.filter(c => c.props?.open === true);
+
+      for(const child of candidates) {
+        if(child.id === activeChild?.id) continue;
+
+        // Skip if already auto-opened
+        if(autoOpenedRef.current.has(child.id)) continue;
+
+        const ifCondition = child.props?.if;
+
+        // Skip if 'if' is explicitly false
+        if(ifCondition === false) continue;
+
+        // Open if 'open=true' and 'if' is not false (undefined or true)
+        if(__DEV__) console.log(`[FlowNavigator] Auto-opening child (once): ${child.name} (open=true)`);
+        autoOpenedRef.current.add(child.id); // Mark as opened
+        open(node.id, child.name).catch(() => { });
+        break; // Only open one
+      }
     });
-  }, [tick, activeRootId]);
+
+  }, [tick, activeRootId, runtime]);
+
 
 
   return (
     <OverlayPortal>
       <BottomSheetModalProvider>
+
         {/* 0. Render Configuration Tree (Hidden) */}
         <View style={{display: 'none'}}>
           {children}
@@ -689,20 +927,22 @@ const styles = StyleSheet.create({
     bottom: 0,
   },
   header: {
-    height: 56,
+    height: 'auto',
+    minHeight: 56,
     paddingHorizontal: 12,
-    flexDirection: 'row',
+    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#e3e3e3',
     backgroundColor: 'transparent',
-    marginTop: 35,
+    marginTop: 40,
   },
-  headerLeft: {width: 48, alignItems: 'flex-start', justifyContent: 'center'},
-  headerCenter: {flex: 1, alignItems: 'center', justifyContent: 'center'},
-  headerRight: {width: 72, alignItems: 'flex-start', justifyContent: 'center'},
-  headerTitle: {fontSize: 18, fontWeight: '600'},
+  headerLeft: {width: 'auto', alignItems: 'flex-end', justifyContent: 'center'},
+  headerCenter: {alignItems: 'center', justifyContent: 'center'},
+  headerRight: {width: 45, alignItems: 'flex-start', justifyContent: 'center'},
+  headerTitle: {fontSize: 22, fontWeight: '800', textAlign: 'center'},
   headerAction: {
     padding: 8,
     borderRadius: 25,

@@ -105,12 +105,12 @@ export function useFlowState<T = any>(scope?: string) {
    * const userName = get('userName');
    * ```
    */
-  const get = React.useCallback(<K extends keyof T>(key?: K): T[K] | T | undefined => {
-    if (!targetScope) return undefined;
-    // Use localState for reactivity during render, but fallback to runtime for latest if needed?
-    // Actually, for consistency in React, we should use localState.
+  const get = React.useCallback(<K extends keyof T>(key?: K, fallback: T[K] | '' = ''): T[K] | T | '' => {
+    if (!targetScope) return fallback;
     const s = localState || {} as T;
-    return key ? s[key] : s;
+    if (!key) return s;
+    const value = s[key];
+    return value !== undefined && value !== null ? value : fallback;
   }, [targetScope, localState]);
 
   /**
@@ -213,12 +213,12 @@ export function useFlowState<T = any>(scope?: string) {
    * const sortBy = getCat('filters', 'sortBy');
    * ```
    */
-  const getCat = React.useCallback(<C = any>(category: string, key?: string): C | undefined => {
-    if (!targetScope) return undefined;
-    // We need to access nested categories from localState for reactivity
+  const getCat = React.useCallback(<C = any>(category: string, key?: string, fallback: C | '' = ''): C | '' => {
+    if (!targetScope) return fallback;
     const cats = (localState as any)?.__categories?.[category];
-    if (!cats) return undefined;
-    return key ? cats[key] : cats;
+    if (!cats) return fallback;
+    const result = key ? cats[key] : cats;
+    return result !== undefined && result !== null ? result : fallback;
   }, [targetScope, localState]);
 
   /**
@@ -261,12 +261,12 @@ export function useFlowState<T = any>(scope?: string) {
    * @param {string} secureKey - The encryption key used for storage.
    * @returns {any} The decrypted value.
    */
-  const getSecure = React.useCallback(<V = any>(key: string, secureKey: string): V | undefined => {
-    if (!targetScope) return undefined;
-    // Access from localState for reactivity
+  const getSecure = React.useCallback(<V = any>(key: string, secureKey: string, fallback: V | '' = ''): V | '' => {
+    if (!targetScope) return fallback;
     const sec = (localState as any)?.__secure?.[key];
-    if (!sec) return undefined;
-    return sec.value;
+    if (!sec) return fallback;
+    const value = sec.value;
+    return value !== undefined && value !== null ? value : fallback;
   }, [targetScope, localState]);
 
   /**
@@ -320,8 +320,8 @@ export function useFlowState<T = any>(scope?: string) {
    * @param {string} key - The key to retrieve.
    * @returns {any} The stored value.
    */
-  const getShared = React.useCallback(<V = any>(key: string): V | undefined => {
-    return getSharedRuntime<V>(key);
+  const getShared = React.useCallback(<V = any>(key: string, fallback: V | '' = ''): V | '' => {
+    return getSharedRuntime<V>(key, fallback);
   }, []);
 
   /**

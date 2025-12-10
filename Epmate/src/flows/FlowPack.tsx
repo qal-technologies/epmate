@@ -12,6 +12,9 @@ import {FlowProvider} from './core/FlowProvider';
  * (e.g., Main App vs Auth Flow vs Profile Flow).
  * 
  * The FlowNavigator renders the active FlowPack, which in turn renders its active Parent.
+ * 
+ * Use `type="tab"` to make this Pack act as a Tab Navigator, where each direct child 
+ * (Parent or nested Pack) becomes a tab.
  */
 export const FlowPack: React.FC<FlowPackProps> = ({
     name,
@@ -21,11 +24,16 @@ export const FlowPack: React.FC<FlowPackProps> = ({
     isRestrictedOut,
     theme,
     shareState,
+    type,
+    tabStyle,
+    iconStyle,
+    hideTab,
 }) => {
     const runtime = useFlowRuntime();
 
-    // Register the pack with the registry
-    React.useEffect(() => {
+    // Register the pack with the registry SYNCHRONOUSLY using useLayoutEffect
+    // This ensures the pack is registered BEFORE children try to register.
+    React.useLayoutEffect(() => {
         flowRegistry.registerNode({
             id: name,
             name,
@@ -37,19 +45,19 @@ export const FlowPack: React.FC<FlowPackProps> = ({
                 isRestrictedOut,
                 theme,
                 shareState,
+                type,
+                tabStyle,
+                iconStyle,
+                hideTab,
             },
         });
 
         return () => {
             flowRegistry.unregisterNode(name);
         };
-    }, [name, initial, isRestrictedIn, isRestrictedOut, theme, shareState]);
+    }, [name, initial, isRestrictedIn, isRestrictedOut, theme, shareState, type, tabStyle, iconStyle, hideTab]);
 
-    // If this pack is active, render its active child (Parent)
-    // We don't render children directly here; FlowNavigator handles the Pack rendering.
-    // However, we need to provide the children to the React tree so they can register themselves.
-
-    // Wrap children in a Provider to establish context, though parents mostly register themselves.
+    // Wrap children in a Provider to establish context, allowing children to access flowId.
     return (
         <FlowProvider parentId={name} childId={name} flowId={name}>
             {children}

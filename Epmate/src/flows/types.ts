@@ -1,4 +1,4 @@
-import { ViewStyle, TextStyle } from 'react-native';
+import {ViewStyle, TextStyle} from 'react-native';
 
 /**
  * @category Core
@@ -8,13 +8,32 @@ import { ViewStyle, TextStyle } from 'react-native';
  * - `pack`: A container that groups multiple parents together.
  * - `tab`: A flow that organizes children into tabs.
  */
-export type FlowType = 'modal' | 'page' | 'pack' | 'child' | 'tab';
+export type FlowType = 'modal' | 'page' | 'pack' | 'child' ;
 
 /**
  * @category Core
  * @description Theme options for flow components, affecting background colors and text styles.
+ * Supports simple string ('dark'|'light') or object with custom properties.
  */
 export type FlowThemeType = 'light' | 'dark';
+
+/**
+ * @category Core
+ * @description Extended theme configuration with custom properties.
+ * Dev can add any key:value pair which will be accessible via useFlowTheme.
+ */
+export interface FlowThemeConfig {
+  bgColor?: string;
+  text?: string;
+  [key: string]: any; // Supports custom properties
+}
+
+
+/**
+ * @category Core
+ * @description Full theme value - can be simple string or detailed config
+ */
+export type FlowThemeValue = FlowThemeType | FlowThemeConfig;
 
 /**
  * @category Core
@@ -38,13 +57,13 @@ export type SizeType = 'full' | 'half' | 'bottom';
  * - `'zoom'`: Scale up from center.
  * - `'none'`: Instant switch without animation.
  */
-export type AnimationType = 
-  | 'slideBottom' 
-  | 'slideTop' 
-  | 'slideLeft' 
-  | 'slideRight' 
-  | 'fade' 
-  | 'zoom' 
+export type AnimationType =
+  | 'slideBottom'
+  | 'slideTop'
+  | 'slideLeft'
+  | 'slideRight'
+  | 'fade'
+  | 'zoom'
   | 'none';
 
 
@@ -73,11 +92,11 @@ export type AnimationType =
  */
 export type AtEndConfig =
   | {
-      endWith: 'parent' | 'self' | 'element' | ((ctx: any) => any);
-      element?: string;
-      cleanUp?: boolean;
-      resetState?: boolean;
-    }
+    endWith: 'parent' | 'self' | 'element' | ((ctx: any) => any);
+    element?: string;
+    cleanUp?: boolean;
+    resetState?: boolean;
+  }
   | undefined;
 
 
@@ -99,7 +118,7 @@ export interface FlowBaseProps {
    * **Must be unique** within its parent container.
    */
   name: string;
-  
+
   /** 
    * The type of flow container.
    * - `'page'`: Standard screen navigation (default).
@@ -107,63 +126,229 @@ export interface FlowBaseProps {
    * - `'pack'`: Grouping of multiple flows.
    */
   type?: FlowType;
-  
+
+  /**
+* - `tab`: A flow that organizes children into tabs.
+* - `drawer`: A flow that organizes children into a drawer.
+*/
+
+  navType?: 'tab' | 'drawer';
+
   /** 
    * The child components of this flow. 
    * These should typically be `Flow.FC` components.
    */
   children?: React.ReactNode;
-  
+
   /** 
    * The name of the child to display initially when this flow opens.
    * If not provided, the first declared child is used.
    */
   initial?: string;
-  
+
   /** 
    * Configuration for end-of-flow behavior (e.g., when `next()` is called on the last step).
    * @see AtEndConfig
    */
   atEnd?: AtEndConfig;
-  
+
   /** 
    * If `true`, prevents the user from navigating out of this flow via standard back actions 
    * (hardware back button or header back).
    * 
    * **Use Case:** Mandatory flows like onboarding, login, or critical forms.
    */
-  isRestrictedOut?: boolean;
-  
+  isRestrictedOut?: boolean | string | {title?: string; message?: string;};
+
   /** 
    * If `true`, prevents navigation into this flow from other flows unless explicitly targeted by ID.
    * Useful for private or internal sub-flows.
    */
-  isRestrictedIn?: boolean;
-  
+  isRestrictedIn?: boolean | string | {title?: string; message?: string;};
+
   /** 
    * Timeout in milliseconds for lifecycle hooks (e.g., `onOpen`, `onClose`) to complete.
    * Defaults to `8000ms`.
    */
   lifecycleTimeoutMs?: number;
-  
+
   /** 
    * The visual theme for this flow.
    * - `'light'`: Light background, dark text.
    * - `'dark'`: Dark background, light text.
    */
   theme?: FlowThemeType;
-  
+
   /** 
    * If `true`, all children of this flow share the same state scope.
    * If `false` (default), each child has its own isolated state.
    */
-  shareState?: boolean;
+  shareState?: string[];
 
   /**
    * If `true`, hides the tab bar when this flow (or one of its children) is active.
    * Only applicable if this flow is a child of a Tab Pack.
    */
   hideTab?: boolean;
+
+  /**
+   * Title for header or tab label.
+   */
+  title?: string;
+
+  /**
+   * Icon for tabs or headers.
+   * Can be a string (MaterialIcons name) or a render function.
+   * 
+   * @example
+   * // String icon name
+   * icon="home"
+   * 
+   * // Custom render function
+   * icon={({size, color}) => <MyIcon size={size} color={color} />}
+   */
+  icon?: string | ((props: {size: number; color: string;}) => React.ReactElement);
+
+
+  /**
+   * If `true`, the header (including title and back button) is hidden for this step.
+   * Useful for custom headers or full-screen content.
+   */
+  noHeader?: boolean;
+
+  /**
+   * Configuration for the header.
+   */
+  headerConfig?: {
+    /** Position of the title: 'left', 'center', 'right'. Default: 'center'. */
+    titlePosition?: 'left' | 'center' | 'right';
+    /** Custom style for the header container. */
+    headerStyle?: ViewStyle;
+    /** If true, hides the back button. */
+    noBackBtn?: boolean;
+    /** Component to render on the right side of the header. */
+    headerRight?: React.ReactNode;
+    /** Component to render at the bottom of the header. */
+    headerBottom?: React.ReactNode;
+    /**
+     * If true, header background becomes transparent and floats over content.
+     */
+    transparent?: boolean;
+  };
+
+  /**
+   * Style configuration for the tab bar.
+   * Only applicable if navType='tab'.
+   */
+  tabStyle?: {
+    /** Position of the tab bar. Default: 'bottom' */
+    position?: 'top' | 'bottom' | 'left' | 'right';
+    /** If true, hides the tab bar on scroll. Default: false */
+    hideOnScroll?: boolean;
+    /** Background color of the tab bar. */
+    bgColor?: string;
+    /** Extra space at the bottom (for safe area). */
+    spaceBottom?: number;
+    /** Extra space at the top. */
+    spaceTop?: number;
+    /** Extra space at the right (for safe area). */
+    spaceRight?: number;
+    /** Extra space at the left. */
+    spaceLeft?: number;
+    /** Space type. it's default to 'loose'*/
+    space?: 'tight' | 'loose';
+    /** If true, applies a shadow to the tab bar. */
+    withShadow?: boolean;
+    /** If true, applies a backdrop blur effect. */
+    backdropBlur?: boolean;
+    /** Opacity of the tab bar background. */
+    opacity?: number;
+    /** Border radius style. */
+    borderRadius?: 'curved' | 'curvedTop' | 'curvedBottom' | 'default';
+    /** Width strategy. */
+    width?: 'full' | 'endSpace';
+    /** If true, tab bar will animate in/out. Default: true */
+    animate?: boolean;
+    /**Background color of the tab content container */
+    containerBgColor?: string;
+
+    /** If 'overlay', tab bar will be inside the rendered content. Default: 'screen' 
+    * Works only with 'left' or 'right' position,
+    * Bottom and top auto overlays if not on width = 'full'
+    * @default 'screen'
+    */
+    type?: 'overlay' | 'screen';
+
+    /**
+     * Tab size. 
+     * Works just with 'left' or 'right' position
+     * Only affects bottom/top tab icon and icon text size
+     * @default 'default'
+     */
+    tabSize?: number | 'small' | 'default' | 'large';
+  }
+
+  /**
+   * Style configuration for tab icons/labels.
+   * Only applicable if navType='tab'.
+   */
+  iconStyle?: {
+    /** Color of inactive icons. 
+    * @default '#888'
+    */
+    iconColor?: string;
+
+
+
+    /** Color of active icons. 
+    * @default '#0000'
+    */
+    activeColor?: string;
+
+    /** If false, does not displays text labels. 
+    * @default true
+    */
+    withText?: boolean;
+
+    /** If true, displays only text on the tab 
+    * @default false
+    */
+    textOnly?: boolean;
+
+    /** Color of text labels. 
+    * @default '#fff'
+    */
+    textColor?: string;
+
+    /** Size of text labels. 
+    * @default 14
+    */
+    textSize?: number;
+
+    /** Size of icons. 
+    * @default 20
+    */
+    iconSize?: number;
+
+    /**
+     * Adds padding to the tab label text
+     * default padding is 5 for textOnly tabs and 10 for withIcon tabs
+     */
+    textPadding?: number;
+
+    /**Turns all tab label to uppercase 
+    * @default false
+    */
+    allCaps?: boolean;
+
+    iconActiveStyle?: 'opacity' | 'top-border' | 'background' | 'bottom-border' | 'left-border' | 'right-border' | 'circle';
+  };
+
+  /**
+   * Style configuration for the drawer.
+   * Only applicable if navType='drawer'.
+   */
+  drawerStyle?: FlowDrawerStyle;
 }
 
 /**
@@ -188,17 +373,17 @@ export interface FlowModalProps extends FlowBaseProps {
    * Default is 'half'.
    */
   size?: SizeType;
-  
+
   /** 
    * If true, the modal can be dragged to resize or dismiss (depending on `dismissable`).
    */
   draggable?: boolean;
-  
+
   /** 
    * If true, the modal can be dismissed by tapping the backdrop or dragging it down.
    */
   dismissable?: boolean;
-  
+
   /** 
    * If true, the modal will cover the entire screen, including the status bar area.
    */
@@ -219,6 +404,12 @@ export interface FlowModalProps extends FlowBaseProps {
    * If true, applies a shadow to the modal content.
    */
   withShadow?: boolean;
+
+  /**
+ * If `true`, hides the tab bar when this flow (or one of its children) is active.
+ * Only applicable if this flow is a child of a Tab Pack.
+ */
+  hideTab?: boolean;
 }
 
 /**
@@ -236,6 +427,12 @@ export interface FlowModalProps extends FlowBaseProps {
  */
 export interface FlowPackProps extends FlowBaseProps {
   /**
+* - `tab`: A flow that organizes children into tabs.
+* - `drawer`: A flow that organizes children into a drawer.
+*/
+
+  navType?: 'tab' | 'drawer';
+  /**
    * The name of the initial parent flow to activate within this pack.
    * Must match the `name` prop of one of the direct children.
    */
@@ -252,6 +449,80 @@ export interface FlowPackProps extends FlowBaseProps {
    * Only applicable if `type='tab'`.
    */
   iconStyle?: FlowTabProps['iconStyle'];
+
+  /**
+ * If `true`, hides the tab bar when this flow (or one of its children) is active.
+ * Only applicable if this flow is a child of a Tab Pack.
+ */
+  hideTab?: boolean;
+
+  /**
+   * Style configuration for the drawer.
+   * Only applicable if `navType='drawer'`.
+   */
+  drawerStyle?: FlowDrawerStyle;
+}
+
+/**
+ * @category Styling
+ * @description Style configuration for drawer navigation.
+ */
+export interface FlowDrawerStyle {
+  /**
+   * Drawer size.
+   * - 'full': Takes 100% of screen width/height
+   * - 'default': Takes 80-90% of screen width/height
+   * - 'icon': Only shows icons (small width for side drawers)
+   */
+  size?: 'full' | 'default' | 'icon';
+
+  /**
+   * Position of the drawer.
+   * - 'left': Slides from left side
+   * - 'right': Slides from right side
+   * - 'top': Slides from top
+   * - 'bottom': Slides from bottom
+   */
+  position?: 'left' | 'right' | 'top' | 'bottom';
+
+  /** Background color of the drawer */
+  bgColor?: string;
+
+  /** Overlay opacity when drawer is open */
+  overlayOpacity?: number;
+
+  /** If true, allows swipe gesture to open/close */
+  gestureEnabled?: boolean;
+
+  /** Width of drawer (for left/right position) */
+  width?: number | string;
+
+  /** Height of drawer (for top/bottom position) */
+  height?: number | string;
+
+  /** Animation duration in ms */
+  animationDuration?: number;
+
+  /** 
+   * Custom trigger icon. Can be:
+   * - string: MaterialIcons name
+   * - function: (props: {size: number, color: string}) => ReactElement
+   * - ReactElement: A custom component
+   */
+  triggerIcon?: string | ((props: {size: number; color: string}) => React.ReactElement) | React.ReactElement;
+
+  /** Style for the trigger button container */
+  triggerStyle?: {
+    size?: number;
+    color?: string;
+    backgroundColor?: string;
+    borderRadius?: number;
+    padding?: number;
+    position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+  };
+
+  /** If true, hides the default trigger button (use nav.openDrawer() instead) */
+  hideTrigger?: boolean;
 }
 
 /**
@@ -277,38 +548,32 @@ export interface FlowChildBaseProps<T = Record<string, any>> {
    * **Must be unique** within its parent flow.
    */
   name: string;
-  
+
   /** 
    * The React component to render for this step.
    * This component will receive `parentId` and other context props.
    */
-  page: React.ReactNode;
-  
+  page?: React.ReactNode;
+
   /** 
    * The title to display in the header for this step.
    * If not provided, `name` is used as the title.
    */
   title?: string;
-  
-  /** 
-   * If `true`, the header (including title and back button) is hidden for this step.
-   * Useful for custom headers or full-screen content.
-   */
-  noTitle?: boolean;
-  
+
   /** 
    * The animation to use when entering this step.
    * @see AnimationType
    * Default is `'fade'`.
    */
   animationType?: AnimationType;
-  
+
   /** 
    * If `false`, prevents the user from switching away from this step (e.g., via `next()` or `prev()`).
    * Useful for mandatory steps, loading states, or validation blocking.
    */
   shouldSwitch?: boolean;
-  
+
   /** 
    * Lifecycle hook called before this step opens.
    * 
@@ -317,8 +582,8 @@ export interface FlowChildBaseProps<T = Record<string, any>> {
    * @param {string} [ctx.opener] - The ID of the component that triggered the open.
    * @returns {boolean | Promise<boolean>} Return `false` to prevent opening.
    */
-  onOpen?: (ctx: { from: string; opener?: string }) => Promise<boolean> | boolean;
-  
+  onOpen?: (ctx: {from: string; opener?: string;}) => Promise<boolean> | boolean;
+
   /** 
    * Lifecycle hook called when attempting to switch away from this step.
    * 
@@ -326,29 +591,29 @@ export interface FlowChildBaseProps<T = Record<string, any>> {
    * @returns {boolean | Promise<boolean>} Return `false` to prevent switching.
    */
   onSwitching?: (dir: 'forward' | 'backward') => Promise<boolean> | boolean;
-  
+
   /** 
    * Lifecycle hook called after this step has closed.
    */
   onClose?: () => void;
-  
+
   /** 
    * Arbitrary extra data associated with this step.
    * Can be accessed via `flowRegistry.getNode(id).props.extras`.
    */
   extras?: T;
-  
+
   /** 
    * Custom background color for this step.
    * Overrides the theme background.
    */
   background?: string;
-  
+
   /** 
    * Custom activity indicator component to show during transitions (e.g., while `onOpen` is resolving).
    */
   activityIndicator?: React.ReactElement;
-  
+
   /** 
    * A component to render at the top of the content area (e.g., a progress bar).
    * Renders below the header but above the `page` content.
@@ -366,6 +631,107 @@ export interface FlowChildBaseProps<T = Record<string, any>> {
    * (Note: Logic handled by Runtime/Navigator).
    */
   open?: boolean;
+
+  /**
+   * Conditional flag. If false, this step will be skipped during auto-open checks.
+   */
+  if?: boolean;
+
+  /**
+ * If `true`, hides the tab bar when this flow (or one of its children) is active.
+ * Only applicable if this flow is a child of a Tab Pack.
+ */
+  hideTab?: boolean;
+
+  size?: SizeType;
+
+  /**
+   * If `true`, the header (including title and back button) is hidden for this step.
+   * Useful for custom headers or full-screen content.
+   */
+  noHeader?: boolean;
+
+  /**
+   * Configuration for the header.
+   */
+  headerConfig?: {
+    /** Position of the title: 'left', 'center', 'right'. Default: 'center'. */
+    titlePosition?: 'left' | 'center' | 'right';
+    /** Custom style for the header container. */
+    headerStyle?: ViewStyle;
+    /** If true, hides the back button. */
+    noBackBtn?: boolean;
+    /** Component to render on the right side of the header. */
+    headerRight?: React.ReactNode;
+    /** Component to render at the bottom of the header. */
+    headerBottom?: React.ReactNode;
+    /**
+     * If true, header background becomes transparent and floats over content.
+     */
+    transparent?: boolean;
+  };
+
+  /**
+   * Icon for tabs or headers.
+   * Can be a string (MaterialIcons name) or a render function.
+   */
+  icon?: string | ((props: {size: number; color: string;}) => React.ReactElement);
+
+  /**
+   * If true, prevents navigation out of this step.
+   * Can provide custom message string.
+   */
+  isRestrictedOut?: boolean | string | {title?: string; message?: string;};
+
+  /**
+   * If true, prevents navigation into this step.
+   * Can provide custom message string.
+   */
+  isRestrictedIn?: boolean | string | {title?: string; message?: string;};
+
+  /**
+   * If true, allows dragging gestures on this step.
+   * Only applicable for modal-type steps.
+   */
+  draggable?: boolean;
+
+  /**
+   * If true, allows dismissal of this step.
+   * Only applicable for modal-type steps.
+   */
+  dismissable?: boolean;
+
+  /**
+   * Nested children components (alternative to page).
+   * Use this when the FC needs to wrap other components.
+   * **Note:** Use either `page` OR `children`, not both.
+   */
+  children?: React.ReactNode;
+
+  /**
+   * Navigation type for this FC.
+   * Allows an FC to define its own navigation behavior.
+   * - 'tab': This FC acts as a tab navigator
+   * - 'drawer': This FC acts as a drawer navigator
+   */
+  navType?: 'tab' | 'drawer';
+
+  /**
+   * Tab style configuration for when navType='tab'.
+   * Same options as Flow.Pack tabStyle.
+   */
+  tabStyle?: FlowTabProps['tabStyle'];
+
+  /**
+   * 
+   */
+  iconStyle?:FlowTabProps['iconStyle'];
+
+  /**
+   * Drawer style configuration for when navType='drawer'.
+   * Same options as Flow.Pack drawerStyle.
+   */
+  drawerStyle?: FlowDrawerStyle;
 }
 
 /**
@@ -389,22 +755,22 @@ export interface FlowModalChildProps<T = Record<string, any>> extends FlowChildB
    * Overrides the parent's size for this specific step.
    */
   size?: SizeType;
-  
+
   /** 
    * If true, this step allows dragging.
    */
   draggable?: boolean;
-  
+
   /** 
    * If true, this step allows dismissal.
    */
   dismissable?: boolean;
-  
+
   /** 
    * If true, this step covers the full screen.
    */
   coverScreen?: boolean;
-  
+
   /** 
    * Callback triggered when the modal is dragged.
    * @param position - The current drag position (0 to 1).
@@ -427,6 +793,7 @@ export interface FlowModalChildProps<T = Record<string, any>> extends FlowChildB
  * @description Properties specific to a Tab-type flow.
  */
 export interface FlowTabProps extends FlowBaseProps {
+
   /**
    * Style configuration for the tab bar container.
    */
@@ -441,6 +808,12 @@ export interface FlowTabProps extends FlowBaseProps {
     spaceBottom?: number;
     /** Extra space at the top. */
     spaceTop?: number;
+    /** Extra space at the right (for safe area). */
+    spaceRight?: number;
+    /** Extra space at the left. */
+    spaceLeft?: number;
+    /** Space type. it's default to 'loose'*/
+    space?: 'tight' | 'loose';
     /** If true, applies a shadow to the tab bar. */
     withShadow?: boolean;
     /** If true, applies a backdrop blur effect. */
@@ -451,24 +824,80 @@ export interface FlowTabProps extends FlowBaseProps {
     borderRadius?: 'curved' | 'curvedTop' | 'curvedBottom' | 'default';
     /** Width strategy. */
     width?: 'full' | 'endSpace';
+    /** If true, tab bar will animate in/out. Default: true */
+    animate?: boolean;
+    /**Background color of the tab content container */
+    containerBgColor?: string;
+
+    /** If 'overlay', tab bar will be inside the rendered content. Default: 'screen' 
+    * Works only with 'left' or 'right' position,
+    * Bottom and top auto overlays if not on width = 'full'
+    * @default 'screen'
+    */
+    type?: 'overlay' | 'screen';
+
+    /**
+     * Tab size. 
+     * Works just with 'left' or 'right' position
+     * Only affects bottom/top tab icon and icon text size
+     * @default 'default'
+     */
+    tabSize?: number | 'small' | 'default' | 'large'; 
   };
 
   /**
    * Style configuration for the tab icons/labels.
    */
   iconStyle?: {
-    /** Color of inactive icons. */
+    /** Color of inactive icons. 
+    * @default '#888'
+    */
     iconColor?: string;
-    /** Color of active icons. */
+  
+    
+
+    /** Color of active icons. 
+    * @default '#0000'
+    */
     activeColor?: string;
-    /** If true, displays text labels. */
+
+    /** If false, does not displays text labels. 
+    * @default true
+    */
     withText?: boolean;
-    /** Color of text labels. */
+
+    /** If true, displays only text on the tab 
+    * @default false
+    */
+    textOnly?: boolean;
+
+    /** Color of text labels. 
+    * @default '#fff'
+    */
     textColor?: string;
-    /** Size of text labels. */
+
+    /** Size of text labels. 
+    * @default 14
+    */
     textSize?: number;
-    /** Size of icons. */
+
+    /** Size of icons. 
+    * @default 20
+    */
     iconSize?: number;
+
+    /**
+     * Adds padding to the tab label text
+     * default padding is 5 for textOnly tabs and 10 for withIcon tabs
+     */
+    textPadding?: number;
+    
+    /**Turns all tab label to uppercase 
+    * @default false
+    */
+    allCaps?: boolean;
+
+    iconActiveStyle?:'opacity' | 'top-border' | 'background' | 'bottom-border' | 'left-border' | 'right-border' | 'circle'
   };
 }
 
@@ -484,12 +913,16 @@ export type FlowChildProps<T = Record<string, any>> = FlowChildBaseProps<T>;
  */
 export type FlowCreateOptions = {
   shareState?: boolean;
-  isRestrictedIn?: boolean;
-  isRestrictedOut?: boolean;
+  isRestrictedIn?: boolean | string | {title?: string; message?: string;};
+  isRestrictedOut?: boolean | string | {title?: string; message?: string;};
   theme?: string;
   lifecycleTimeoutMs?: number;
   atEnd?: AtEndConfig;
   params?: Record<string, any>;
+  /** 
+   * If true, replaces the current step in history instead of pushing a new one.
+   */
+  replace?: boolean;
 };
 
 /**
@@ -530,19 +963,19 @@ export type SetStateOptions = {
    * Useful for grouping related data (e.g., 'formData', 'settings').
    */
   category?: string;
-  
+
   /**
    * If provided, the state is encrypted using this key before storage.
    * (Mock implementation in current version).
    */
   secureKey?: string;
-  
+
   /**
    * If `true`, the state is marked as temporary and will be cleared automatically
    * on the next navigation action.
    */
   temporary?: boolean;
-  
+
   /**
    * If provided, limits the visibility of this state to specific child IDs.
    * Only the listed children will be able to access this state.
@@ -563,21 +996,21 @@ export type SetStateOptions = {
 export type FlowState = {
   /** Standard key-value pairs */
   [key: string]: FlowStateValue;
-  
+
   /** Categorized state storage */
-  __categories?: { [category: string]: { [key: string]: FlowStateValue } };
-  
+  __categories?: {[category: string]: {[key: string]: FlowStateValue;};};
+
   /** Securely stored state (mocked in this implementation) */
-  __secure?: { [key: string]: { value: string; iv?: string } };
-  
+  __secure?: {[key: string]: {value: string; iv?: string;};};
+
   /** Temporary state that expires on navigation */
-  __temp?: { [key: string]: boolean };
-  
+  __temp?: {[key: string]: boolean;};
+
   /** Scoped state visibility rules */
-  __scoped?: { [key: string]: string[] };
+  __scoped?: {[key: string]: string[];};
 
   /** Shared global state */
-  __shared?: { [key: string]: FlowStateValue };
+  __shared?: {[key: string]: FlowStateValue;};
 };
 
 /**
@@ -603,4 +1036,5 @@ export interface FlowNode {
   activeIndex: number;
   registrationState: RegistrationState;
   registeredAt: number;
+  isPlaceholder?: boolean;
 }

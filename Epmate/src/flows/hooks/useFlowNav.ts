@@ -1,6 +1,6 @@
 import React from 'react';
 import {useFlowContext} from '../core/FlowContext';
-import {next, prev, open, close, goTo, switchRoot} from '../core/FlowRuntime';
+import {next, prev, open, close, goTo, switchRoot, openTab, closeTab, openDrawer, closeDrawer} from '../core/FlowRuntime';
 import {FlowCreateOptions} from '../types';
 
 /**
@@ -69,7 +69,6 @@ export function useFlowNav (scope?: string) {
 
   const goToFn = React.useCallback((...pathSegments: string[]) => {
     if(!targetScope) {
-      // if(__DEV__) console.warn('[useFlowNav.goTo] No scope available. Provide scope explicitly or ensure component is wrapped in FlowProvider.');
       return Promise.resolve(false);
     }
     return goTo(targetScope, ...pathSegments);
@@ -78,6 +77,17 @@ export function useFlowNav (scope?: string) {
   const switchRootFn = React.useCallback((rootId: string) => {
     switchRoot(rootId);
   }, []);
+
+  /**
+   * Replaces the current child with a new one (no back navigation to replaced child).
+   */
+  const replaceFn = React.useCallback((childName: string, opts?: FlowCreateOptions) => {
+    if(!targetScope) {
+      return Promise.resolve(false);
+    }
+    return open(targetScope, childName, undefined, {...opts, replace: true});
+  }, [targetScope]);
+
 
   return {
 
@@ -169,5 +179,42 @@ export function useFlowNav (scope?: string) {
      * ```
      */
     switchRoot: switchRootFn,
+
+    /**
+     * Replaces the current child with a new one.
+     * The replaced child is removed from the navigation stack (no back to it).
+     * 
+     * @param {string} childName - The name of the child to replace with.
+     * @param {FlowCreateOptions} [opts] - Optional configuration.
+     * @returns {Promise<boolean>} Resolves to `true` if replacement was successful.
+     * 
+     * @example
+     * ```tsx
+     * replace('NewScreen');
+     * ```
+     */
+    replace: replaceFn,
+
+    /**
+     * Manually opens the tab bar.
+     */
+    openTab: () => openTab(targetScope as any),
+
+    /**
+     * Manually closes the tab bar.
+     */
+    closeTab: () => closeTab(targetScope as any),
+
+    /**
+     * Manually opens the drawer.
+     * @param {string} [packId] - Optional pack ID. If omitted, finds nearest drawer.
+     */
+    openDrawer: (packId?: string) => openDrawer(packId || targetScope as any),
+
+    /**
+     * Manually closes the drawer.
+     * @param {string} [packId] - Optional pack ID. If omitted, finds nearest drawer.
+     */
+    closeDrawer: (packId?: string) => closeDrawer(packId || targetScope as any),
   };
 }

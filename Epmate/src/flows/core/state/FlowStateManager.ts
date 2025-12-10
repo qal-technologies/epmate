@@ -52,9 +52,13 @@ export function ensureState(scope: string) {
 
 /* -------------------- Public API -------------------- */
 
-export function getFlowState<T = any>(scope: string): T {
+export function getFlowState<T = any>(scope: string, fallback?: T): T {
     ensureState(scope);
-    return (stateMap.get(scope) || {}) as T;
+    const state = stateMap.get(scope);
+    if (!state || Object.keys(state).length === 0) {
+        return fallback !== undefined ? fallback : ({} as T);
+    }
+    return state as T;
 }
 
 export function setFlowState<T = any>(scope: string, newState: T, options?: SetStateOptions) {
@@ -176,12 +180,13 @@ export function keep<T = any>(scope: string, key: string, value: T) {
     setFlowState(scope, {[key]: value}, {temporary: true});
 }
 
-export function getCat<T = any>(scope: string, category: string, key?: string): T | undefined {
+export function getCat<T = any>(scope: string, category: string, key?: string, fallback: T | '' = ''): T | '' {
     ensureState(scope);
     const s = stateMap.get(scope);
     const cat = s?.__categories?.[category];
-    if(!cat) return undefined;
-    return (key ? cat[key] : cat) as T;
+    if (!cat) return fallback;
+    const result = key ? cat[key] : cat;
+    return result !== undefined && result !== null ? result as T : fallback;
 }
 
 export function setCat<T = any>(scope: string, category: string, newState: T) {
@@ -192,13 +197,14 @@ export function secure<T = any>(scope: string, key: string, value: T, secureKey:
     setFlowState(scope, {[key]: value}, {secureKey});
 }
 
-export function getSecure<T = any>(scope: string, key: string, secureKey: string): T | undefined {
+export function getSecure<T = any>(scope: string, key: string, secureKey: string, fallback: T | '' = ''): T | '' {
     ensureState(scope);
     const s = stateMap.get(scope);
     const sec = s?.__secure?.[key];
-    if(!sec) return undefined;
+    if (!sec) return fallback;
     // Mock decryption
-    return sec.value as T;
+    const value = sec.value;
+    return value !== undefined && value !== null ? value as T : fallback;
 }
 
 export function setShared<T = any>(key: string, value: T) {
@@ -206,10 +212,11 @@ export function setShared<T = any>(key: string, value: T) {
     setFlowState('global', {[key]: value}, {shared: true});
 }
 
-export function getShared<T = any>(key: string): T | undefined {
+export function getShared<T = any>(key: string, fallback: T | '' = ''): T | '' {
     ensureState('global');
     const s = stateMap.get('global');
-    return s?.__shared?.[key] as T;
+    const value = s?.__shared?.[key];
+    return value !== undefined && value !== null ? value as T : fallback;
 }
 
 export function onStateChange (scope: string, cb: (...args: any[]) => void) {

@@ -9,8 +9,9 @@ import {open, useFlowRuntime} from '../core/FlowRuntime';
 import {FlowPack} from '../FlowPack';
 import {FlowProvider} from '../core/FlowProvider';
 import {useFlowBackHandler} from '../core/FlowBackHandler';
-import { useFlowProps, useFlowParentProps } from './useFlowProps';
-import { FlowNavigatorWrapper } from '../FlowNavigatorWrapper';
+import {useFlowProps, useFlowParentProps} from './useFlowProps';
+import {FlowNavigatorWrapper} from '../FlowNavigatorWrapper';
+import {FlowModal} from '../FlowModal';
 
 /**
  * @component FlowFC
@@ -27,9 +28,18 @@ import { FlowNavigatorWrapper } from '../FlowNavigatorWrapper';
  * @param {string} [props.parentId] - The ID of the parent flow. Automatically injected by `Flow.Parent`.
  * @returns {null} This component renders nothing directly.
  */
-const FlowFC: React.FC<FlowChildProps & {parentId?: string;}> = ({name, page, parentId, ...props}) => {
+const FlowFC: React.FC<FlowChildProps & {parentId?: string;}> = ({name, page, parentId, children, ...props}) => {
   const propsRef = React.useRef(props);
   propsRef.current = props;
+  const [isRegistered, setIsRegistered] = React.useState(false);
+
+  // Validate page XOR children (not both)
+  if(__DEV__ && page && children) {
+    console.warn(`[FlowFC:${name}] Both 'page' and 'children' props are set. Use one or the other, not both. 'page' will be used.`);
+  }
+
+  // Resolve the content (page takes priority)
+  const content = page || children;
 
   // Register synchronously using useLayoutEffect to ensure parent exists
   useLayoutEffect(() => {
@@ -41,33 +51,41 @@ const FlowFC: React.FC<FlowChildProps & {parentId?: string;}> = ({name, page, pa
         name,
         type: 'child',
         parentId,
-        props: {page, ...propsRef.current},
+        props: {page: content, ...propsRef.current},
       });
+      setIsRegistered(true);
       return () => {
-
         flowRegistry.unregisterNode(id);
+        setIsRegistered(false);
       };
     }
   }, [name, parentId]);
 
-  // CRITICAL: Watch for page prop changes and update registry (enables hot reload)
-  useEffect(() => {
-    if(parentId && name && page) {
-      const id = `${parentId}.${name}`;
-      const existingNode = flowRegistry.getNode(id);
-      if(existingNode) {
-        // Update the page prop in the registry when it changes
-        flowRegistry.registerNode({
-          id,
-          name,
-          type: 'child',
-          parentId,
-          props: {page, ...propsRef.current},
-        });
+  // Helper for checking prop changes
+  const prevProps = React.useRef(props) as any;
+  const prevContent = React.useRef(content) as any;
 
-      }
+  React.useEffect(() => {
+    // Check if props actually changed (shallow comparison)
+    const propsChanged = Object.keys(props).length !== Object.keys(prevProps.current).length ||
+      Object.keys(props).some(k => (props as any)[k] !== (prevProps.current as any)[k]);
+
+    // Content component reference check
+    const contentChanged = content !== prevContent.current;
+
+    if((propsChanged || contentChanged) && parentId && name) {
+      const id = `${parentId}.${name}`;
+      flowRegistry.registerNode({
+        id,
+        name,
+        type: 'child',
+        parentId,
+        props: {page: content, ...props},
+      });
+      prevProps.current = props;
+      prevContent.current = content;
     }
-  }, [page, name, parentId]);
+  }, [content, name, parentId, props]); 
 
   return null;
 };
@@ -91,19 +109,16 @@ const FlowParent: React.FC<FlowBaseProps> = ({name, type = 'page', children, ...
   const parentId = context.flowId || null;
   const runtime = useFlowRuntime(); // Get runtime once at component level
   const nav = useFlowNav(name); // Get nav API for this parent
-  
+
   // Enable back handling for this parent
   useFlowBackHandler(name);
 
   const [isRegistered, setIsRegistered] = React.useState(false);
   const instanceId = React.useRef(Math.random().toString(36).slice(2)).current;
 
-
-
   // 1. Lifecycle: Register SYNCHRONOUSLY before render using useLayoutEffect
   // This ensures children can find their parent when they register
   React.useLayoutEffect(() => {
-
     flowRegistry.registerNode({
       id: name,
       name,
@@ -113,59 +128,62 @@ const FlowParent: React.FC<FlowBaseProps> = ({name, type = 'page', children, ...
     });
     setIsRegistered(true);
     return () => {
-
       flowRegistry.unregisterNode(name);
       setIsRegistered(false);
     };
-  }, [name, type, parentId]);
+  }, [name, type, parentId]); // Keep initial registration stable
+
+  const prevParentProps = React.useRef(props) as any;
+
+  // 1b. Reactive Prop Updates
+  React.useEffect(() => {
+    if(isRegistered) {
+      // Shallow compare
+      const propsChanged = Object.keys(props).length !== Object.keys(prevParentProps.current).length ||
+        Object.keys(props).some(k => (props as any)[k] !== (prevParentProps.current as any)[k]);
+
+      if(propsChanged) {
+        flowRegistry.updateNodeProps(name, props);
+        prevParentProps.current = props;
+      }
+    }
+  }, [name, isRegistered, props]); // Update whenever props change, but guarded by shallow compare
+
 
   // 2. Auto-open first child after registration and children are mounted
   React.useEffect(() => {
-    if (!isRegistered) {
-
-      return;
-    }
-
-
+    if(!isRegistered) return;
 
     // Small delay to ensure children have registered
     const timeoutId = setTimeout(() => {
       const active = runtime.getActive(name);
       const children = flowRegistry.getChildren(name);
-      
 
-
-      
       // Only auto-open if no child is currently active
-      if (!active) {
-        if (children.length > 0) {
+      if(!active) {
+        if(children.length > 0) {
           // Try to open the specified initial child first
           let childToOpen = children[0];
-          
-          if (props.initial) {
+
+          if(props.initial) {
             const initialChild = children.find(c => c.name === props.initial);
-            if (initialChild) {
+            if(initialChild) {
               childToOpen = initialChild;
-
             } else {
-              if (__DEV__) console.warn(`[FlowParent:${instanceId}] Initial child "${props.initial}" not found, using first child: ${children[0].name}`);
+              if(__DEV__) console.warn(`[FlowParent:${instanceId}] Initial child "${props.initial}" not found, falling back to first child: ${children[0].name}`);
+              childToOpen = children[0];
             }
-          } else {
-
           }
-          
+
           // Use the nav API's open function
-
-          nav.open(childToOpen.name).then(result => {
-
-          }).catch(err => {
-            if (__DEV__) console.error(`[FlowParent:${instanceId}] nav.open error:`, err);
+          nav.open(childToOpen.name).catch(err => {
+            if(__DEV__) console.error(`[FlowParent:${instanceId}] nav.open error:`, err);
           });
         } else {
-          if (__DEV__) console.warn(`[FlowParent:${instanceId}] No children registered yet for "${name}"`);
+          // If no children, it might be async loading or empty parent.
+          // We won't warn heavily here to avoid noise, just debug log
+          // if(__DEV__) console.log(`[FlowParent:${instanceId}] No children registered yet for "${name}" (may be empty or async)`);
         }
-      } else {
-
       }
     }, 10); // Small delay for child registration
 
@@ -182,7 +200,7 @@ const FlowParent: React.FC<FlowBaseProps> = ({name, type = 'page', children, ...
     // ALSO subscribe to registry changes. 
     // This is critical because if a child registers AFTER we render, we need to re-render to "see" it.
     const unsubRegistry = flowRegistry.subscribe(() => {
-       setTick(t => t + 1);
+      setTick(t => t + 1);
     });
 
     return () => {
@@ -293,7 +311,7 @@ class FlowBuilder<P extends FlowBaseProps> implements IBuilderNamed<P>, IBuilder
   private type: FlowType;
   private _name: string = '';
   private _props: Partial<P> = {};
-  private _children: {name: string; component: React.ReactNode;}[] = [];
+  private _children: {name: string; component: React.ReactNode | (() => React.ReactNode);}[] = [];
 
   constructor(type: FlowType) {
     this.type = type;
@@ -310,7 +328,7 @@ class FlowBuilder<P extends FlowBaseProps> implements IBuilderNamed<P>, IBuilder
   /**
    * @inheritdoc
    */
-  child (name: string, component: React.ReactNode): IBuilderChild<P> & IBuilderProps<P> {
+  child (name: string, component: React.ReactNode | (() => React.ReactNode)): IBuilderChild<P> & IBuilderProps<P> {
     this._children.push({name, component});
     return this as any;
   }
@@ -373,14 +391,21 @@ class FlowBuilder<P extends FlowBaseProps> implements IBuilderNamed<P>, IBuilder
 
       return (
         <>
-          {this._children.map((child) => (
-            <FlowFC
-              key={child.name}
-              name={child.name}
-              page={child.component}
-              parentId={parentName}
-            />
-          ))}
+          {this._children.map((child) => {
+            // Lazy evaluate if function to avoid TDZ (temporal dead zone) with styles
+            const pageContent = typeof child.component === 'function' && !React.isValidElement(child.component)
+              ? (child.component as () => React.ReactNode)()
+              : child.component;
+
+            return (
+              <FlowFC
+                key={child.name}
+                name={child.name}
+                page={pageContent}
+                parentId={parentName}
+              />
+            );
+          })}
         </>
       );
     };
@@ -482,6 +507,13 @@ export function useFlow () {
     Pack: FlowPack,
 
     /**
+     * Standalone Modal component with drag gesture support.
+     * Can be used independently outside of Flow.Parent.
+     * @see FlowModal
+     */
+    Modal: FlowModal,
+
+    /**
      * Hook accessor to access and manage the Flow state.
      * Returns the same interface as `useFlowState()`.
      *
@@ -524,7 +556,7 @@ export function useFlow () {
      * setProps({ title: 'New Title' });
      * ```
      */
-    props: <T = {}>() => useFlowProps<T>(),
+    props: <T = {}> () => useFlowProps<T>(),
 
     /**
      * Hook accessor to access and modify the parent's props.
@@ -538,6 +570,6 @@ export function useFlow () {
      * setParentProps({ isRestrictedOut: true });
      * ```
      */
-    parentProps: <T = {}>() => useFlowParentProps<T>(),
+    parentProps: <T = {}> () => useFlowParentProps<T>(),
   };
 }
